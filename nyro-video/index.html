@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test video</title>
+
+    <link rel="import" href="nyro-video.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../webcomponents/webcomponents-loader.js"></script>
+    <style>
+    nyro-video {
+      display: block;
+      width: 800px;
+      max-width: 100%;
+      height: 500px;
+    }
+    </style>
+
+  </head>
+  <body>
+    <nyro-video
+      autoplay
+      controls
+      src="https://video-dev.github.io/streams/x36xhzz/x36xhzz.m3u8"
+      ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="
+    ></nyro-video>
+
+  </body>
+</html>
