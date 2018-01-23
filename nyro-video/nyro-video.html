@@ -142,6 +142,46 @@
   background: #fff;
 }
 
+.nyroVideoQuality {
+    position: relative;
+    width: 40px;
+    text-align: center;
+    cursor: pointer;
+}
+.nyroVideoQuality ul {
+    position: absolute;
+    bottom: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 300ms, visibility 300ms;
+}
+.nyroVideoQuality:hover ul {
+    opacity: 1;
+    visibility: visible;
+}
+.nyroVideoQuality li {
+    padding: 0;
+    margin: 0;
+}
+.nyroVideoQuality button {
+    line-height: 1.7;
+    width: 100%;
+}
+.nyroVideoQuality .using {
+    background: rgba(0, 0, 0, 0.3);
+}
+.nyroVideoQuality button:hover, .nyroVideoQuality .selected {
+    color: red;
+}
+.nyroVideoQuality strong {
+    color: red;
+}
+
 .nyroVideoTimeDiviser:after {
   content: ' / ';
 }
@@ -232,7 +272,7 @@
       document.querySelector('head').appendChild(script);
     };
 
-    const canPlayNativeHls = !!document.createElement('video').canPlayType('application/vnd.apple.mpegURL');
+    const canPlayNativeHls = false && !!document.createElement('video').canPlayType('application/vnd.apple.mpegURL');
 
     const currentScript = document.currentScript,
           template = currentScript.previousElementSibling;
@@ -550,8 +590,7 @@
               html+= '<div class="nyroVideoDuration"></div>';
               break;
             case 'quality':
-              // @todo
-              html+= '<div class="nyroVideoQuality"><ul></ul></div>';
+              html+= '<div class="nyroVideoQuality"></div>';
               break;
             case 'fullscreen':
               if (canFullScreen) {
@@ -912,10 +951,71 @@
           if (Hls.isSupported()) {
             this._canPlay = true;
             this._hls = new Hls();
-            /*
             this._hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            });
-            */
+                if (!this._dom.subConstrols.quality) {
+                    return;
+                }
+                if (this._hls.levels.length > 1) {
+                    let lines = [];
+                    lines.push('<li><button data-index="-1" class="selected">auto</button></li>');
+                    this._hls.levels.forEach(function(level, idx) {
+                        lines.push('<li><button data-index="'+idx+'">'+level.name+'</button></li>');
+                    });
+                    let html = '<ul>'+lines.reverse().join('')+'</ul>';
+                    html+= '<strong>auto</strong>';
+                    this._dom.subConstrols.quality.forEach(function(el) {
+                        el.innerHTML = html;
+                    });
+                    this._dom.subConstrols.quality_display = this._dom.global.querySelectorAll('.nyroVideoQuality strong');
+                    this._dom.subConstrols.quality_buttons = this._dom.global.querySelectorAll('.nyroVideoQuality button');
+
+                      this._dom.subConstrols.quality_buttons.forEach(function(el) {
+                        el.addEventListener('click', function(e) {
+                          if (!this._hls) {
+                              return;
+                          }
+                          e.preventDefault();
+                          const newLevel = parseInt(el.dataset.index);
+                          if (newLevel === this._hls.currentLevel || (newLevel === -1 && this._hls.autoLevelEnabled)) {
+                              return;
+                          }
+                          this._hls.currentLevel = newLevel;
+
+                          if (this._dom.subConstrols.quality_buttons) {
+                              this._dom.subConstrols.quality_buttons.forEach(function(but) {
+                                  if (but === el) {
+                                      but.classList.add('selected');
+                                  } else {
+                                      but.classList.remove('selected');
+                                  }
+                              });
+                          }
+                          if (this._dom.subConstrols.quality_display) {
+                              this._dom.subConstrols.quality_display.forEach(function(display) {
+                                  display.textContent = el.textContent;
+                              });
+                          }
+
+                        }.bind(this));
+                      }.bind(this));
+
+                } else {
+                    this._dom.subConstrols.quality.forEach(function(el) {
+                        el.style.display = 'none';
+                    });
+                }
+            }.bind(this));
+            this._hls.on(Hls.Events.LEVEL_SWITCHED, function(level, data) {
+                if (this._dom.subConstrols.quality_buttons) {
+                    this._dom.subConstrols.quality_buttons.forEach(function(el) {
+                        if (el.dataset.index == data.level) {
+                            el.classList.add('using');
+                        } else {
+                            el.classList.remove('using');
+                        }
+                    });
+                }
+            }.bind(this));
             this._hls.loadSource(this._src);
             this._hls.attachMedia(this._dom.video);
 
