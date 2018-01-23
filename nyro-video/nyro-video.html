@@ -218,64 +218,64 @@
     'use strict';
 
     const scriptUrls = {
-      hls: 'https://video-dev.github.io/hls.js/dist/hls.light.min.js',
-      ima3: '//imasdk.googleapis.com/js/sdkloader/ima3.js'
+        hls: 'https://video-dev.github.io/hls.js/dist/hls.light.min.js',
+        ima3: '//imasdk.googleapis.com/js/sdkloader/ima3.js'
     };
     const scriptCallbacks = {};
     const loadScript = function(name, callback, callbackError) {
-      if (scriptCallbacks[name] !== undefined) {
-        // already started, loaded or error
-        if (scriptCallbacks[name] === true) {
-          callback(name);
-        } else if (scriptCallbacks[name] === false) {
-          callbackError(name);
-        } else {
-          scriptCallbacks[name].push({
+        if (scriptCallbacks[name] !== undefined) {
+            // already started, loaded or error
+            if (scriptCallbacks[name] === true) {
+                callback(name);
+            } else if (scriptCallbacks[name] === false) {
+                callbackError(name);
+            } else {
+                scriptCallbacks[name].push({
+                    ok: callback,
+                    ko: callbackError
+                });
+            }
+            return;
+        }
+
+        scriptCallbacks[name] = [];
+        scriptCallbacks[name].push({
             ok: callback,
             ko: callbackError
-          });
-        }
-        return;
-      }
+        });
 
-      scriptCallbacks[name] = [];
-      scriptCallbacks[name].push({
-        ok: callback,
-        ko: callbackError
-      });
+        var script = document.createElement('script');
+        script.async = 1;
 
-      var script = document.createElement('script');
-      script.async = 1;
+        script.onload = script.onreadystatechange = function(_, isAbort) {
+            if (isAbort || !script.readyState || /loaded|complete/.test(script.readyState)) {
+                script.onload = script.onreadystatechange = null;
+                script = undefined;
 
-      script.onload = script.onreadystatechange = function( _, isAbort ) {
-          if(isAbort || !script.readyState || /loaded|complete/.test(script.readyState) ) {
-              script.onload = script.onreadystatechange = null;
-              script = undefined;
+                if (!isAbort) {
+                    scriptCallbacks[name].forEach(function(clb) {
+                        clb.ok(name);
+                    })
+                    scriptCallbacks[name] = true;
+                }
+            }
+        };
 
-              if (!isAbort) {
-                  scriptCallbacks[name].forEach(function(clb) {
-                    clb.ok(name);
-                  })
-                  scriptCallbacks[name] = true;
-              }
-          }
-      };
+        script.onerror = function(e) {
+            scriptCallbacks[name].forEach(function(clb) {
+                clb.ko(name);
+            })
+            scriptCallbacks[name] = false;
+        };
 
-      script.onerror = function(e) {
-        scriptCallbacks[name].forEach(function(clb) {
-          clb.ko(name);
-        })
-        scriptCallbacks[name] = false;
-      };
-
-      script.src = scriptUrls[name];
-      document.querySelector('head').appendChild(script);
+        script.src = scriptUrls[name];
+        document.querySelector('head').appendChild(script);
     };
 
     const canPlayNativeHls = false && !!document.createElement('video').canPlayType('application/vnd.apple.mpegURL');
 
     const currentScript = document.currentScript,
-          template = currentScript.previousElementSibling;
+        template = currentScript.previousElementSibling;
 
     var evtSupportsPassive = false;
     try {
@@ -288,151 +288,153 @@
         window.removeEventListener('testPassive', null, opts);
     } catch (e) {}
 
-    const evtPassivePrm = evtSupportsPassive ? { passive: true } : false;
+    const evtPassivePrm = evtSupportsPassive ? {
+        passive: true
+    } : false;
 
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints,
-      evtPointerStart = isTouch ? 'touchstart': 'mousedown',
-      evtPointerMove = isTouch ? 'touchmove': 'mousemove',
-      evtPointerEnd = isTouch ? 'touchend': 'mouseup';
+        evtPointerStart = isTouch ? 'touchstart' : 'mousedown',
+        evtPointerMove = isTouch ? 'touchmove' : 'mousemove',
+        evtPointerEnd = isTouch ? 'touchend' : 'mouseup';
 
     const videoEvts = [
-      'canplay',
-      'durationchange',
-      'ended',
-      'error',
-      'loadeddata',
-      'loadedmetadata',
-      'loadstart',
-      'pause',
-      'play',
-      'playing',
-      'progress',
-      'seeked',
-      'seeking',
-      'timeupdate',
-      'volumechange'
+        'canplay',
+        'durationchange',
+        'ended',
+        'error',
+        'loadeddata',
+        'loadedmetadata',
+        'loadstart',
+        'pause',
+        'play',
+        'playing',
+        'progress',
+        'seeked',
+        'seeking',
+        'timeupdate',
+        'volumechange'
     ];
 
     var str_pad_left = function(string, pad, length) {
-        return (new Array(length + 1).join(pad) + string).slice(-length);
-      },
-      humanTime = function(time) {
-        var seconds = parseInt(time),
-            minutes = Math.floor(time / 60),
-            seconds = seconds - minutes * 60;
+            return (new Array(length + 1).join(pad) + string).slice(-length);
+        },
+        humanTime = function(time) {
+            var seconds = parseInt(time),
+                minutes = Math.floor(time / 60),
+                seconds = seconds - minutes * 60;
 
-        return str_pad_left(minutes, '0', 2) + ':' + str_pad_left(seconds, '0', 2);
-      },
-      curClbPointerEnd,
-      clbPointerEnd = function(e) {
-        if (curClbPointerEnd) {
-          curClbPointerEnd(e);
-          curClbPointerEnd = false;
-        }
-        document.removeEventListener(evtPointerEnd, clbPointerEnd);
-      },
-      documentClbPointerEnd = function(clb) {
-        if (curClbPointerEnd) {
-          curClbPointerEnd();
-          curClbPointerEnd = clb;
-        } else {
-          curClbPointerEnd = clb;
-          document.addEventListener(evtPointerEnd, clbPointerEnd, evtPassivePrm);
-        }
-      },
-      fsElement,
-      fsClb = false,
-      removeFullscreenClb = function() {
-          document.removeEventListener('fullscreenchange', fsClb);
-          document.removeEventListener('mozfullscreenchange', fsClb);
-          document.removeEventListener('webkitfullscreenchange', fsClb);
-          document.removeEventListener('msfullscreenchange', fsClb);
-      },
-      addFullscreenClb = function(clb) {
-          fsClb = clb;
-          document.addEventListener('fullscreenchange', clb);
-          document.addEventListener('mozfullscreenchange', clb);
-          document.addEventListener('webkitfullscreenchange', clb);
-          document.addEventListener('msfullscreenchange', clb);
-      },
-      canFullScreen = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
-      getFullscreenElt = function() {
-	      if (document.fullscreenElement) {
-		        return document.fullscreenElement;
-	      } else if (document.mozFullScreenElement) {
-		        return document.mozFullScreenElement;
-	      } else if (document.webkitFullscreenElement) {
-		        return document.webkitFullscreenElement;
-	      } else if (document.msFullscreenElement) {
-		        return document.msFullscreenElement;
-	      }
-      },
-      makeFullScreen = function(element) {
-        var isFullScreen = false;
-        if (fsElement && fsElement == element) {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if(document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if(document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if(document.msExitFullscreen) {
-                document.msExitFullscreen();
+            return str_pad_left(minutes, '0', 2) + ':' + str_pad_left(seconds, '0', 2);
+        },
+        curClbPointerEnd,
+        clbPointerEnd = function(e) {
+            if (curClbPointerEnd) {
+                curClbPointerEnd(e);
+                curClbPointerEnd = false;
             }
-            fsElement = false;
-            isFullScreen = false;
-            removeFullscreenClb();
-        } else {
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-                isFullScreen = true;
-            } else if (element.mozRequestFullScreen) {
-                element.mozRequestFullScreen();
-                isFullScreen = true;
-            } else if (element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-                isFullScreen = true;
-            } else if (element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-                isFullScreen = true;
+            document.removeEventListener(evtPointerEnd, clbPointerEnd);
+        },
+        documentClbPointerEnd = function(clb) {
+            if (curClbPointerEnd) {
+                curClbPointerEnd();
+                curClbPointerEnd = clb;
+            } else {
+                curClbPointerEnd = clb;
+                document.addEventListener(evtPointerEnd, clbPointerEnd, evtPassivePrm);
             }
+        },
+        fsElement,
+        fsClb = false,
+        removeFullscreenClb = function() {
+            document.removeEventListener('fullscreenchange', fsClb);
+            document.removeEventListener('mozfullscreenchange', fsClb);
+            document.removeEventListener('webkitfullscreenchange', fsClb);
+            document.removeEventListener('msfullscreenchange', fsClb);
+        },
+        addFullscreenClb = function(clb) {
+            fsClb = clb;
+            document.addEventListener('fullscreenchange', clb);
+            document.addEventListener('mozfullscreenchange', clb);
+            document.addEventListener('webkitfullscreenchange', clb);
+            document.addEventListener('msfullscreenchange', clb);
+        },
+        canFullScreen = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
+        getFullscreenElt = function() {
+            if (document.fullscreenElement) {
+                return document.fullscreenElement;
+            } else if (document.mozFullScreenElement) {
+                return document.mozFullScreenElement;
+            } else if (document.webkitFullscreenElement) {
+                return document.webkitFullscreenElement;
+            } else if (document.msFullscreenElement) {
+                return document.msFullscreenElement;
+            }
+        },
+        makeFullScreen = function(element) {
+            var isFullScreen = false;
+            if (fsElement && fsElement == element) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                fsElement = false;
+                isFullScreen = false;
+                removeFullscreenClb();
+            } else {
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                    isFullScreen = true;
+                } else if (element.mozRequestFullScreen) {
+                    element.mozRequestFullScreen();
+                    isFullScreen = true;
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                    isFullScreen = true;
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                    isFullScreen = true;
+                }
+                if (isFullScreen) {
+                    if (fsElement) {
+                        element.classList.remove('fullscreened');
+                        removeFullscreenClb();
+                    }
+                    fsElement = element;
+                    addFullscreenClb(function(e) {
+                        if (fsElement != getFullscreenElt()) {
+                            removeFullscreenClb();
+                            element.exitFullscreen();
+                        }
+                    });
+                }
+            }
+
             if (isFullScreen) {
-              if (fsElement) {
-                  element.classList.remove('fullscreened');
-                  removeFullscreenClb();
-              }
-              fsElement = element;
-                addFullscreenClb(function(e) {
-			      if (fsElement != getFullscreenElt()) {
-                    removeFullscreenClb();
-                    element.exitFullscreen();
-                  }
-                });
+                element.classList.add('fullscreened');
+            } else {
+                element.classList.remove('fullscreened');
             }
-        }
 
-        if (isFullScreen) {
-          element.classList.add('fullscreened');
-        } else {
-          element.classList.remove('fullscreened');
-        }
-
-        return isFullScreen;
-    },
-    resizeClbs = [],
-    addResizeClb = function(clb) {
-        resizeClbs.push(clb);
-    },
-    resizeRaf;
+            return isFullScreen;
+        },
+        resizeClbs = [],
+        addResizeClb = function(clb) {
+            resizeClbs.push(clb);
+        },
+        resizeRaf;
 
     window.addEventListener('resize', function() {
         if (resizeRaf) {
             cancelAnimationFrame(resizeRaf);
         }
         resizeRaf = requestAnimationFrame(function() {
-          resizeClbs.forEach(function(clb) {
-            clb();
-          });
+            resizeClbs.forEach(function(clb) {
+                clb();
+            });
         });
     }, evtPassivePrm);
 
@@ -442,953 +444,954 @@
 
     window.NyroVideo = class extends HTMLElement {
 
-      constructor() {
-        super();
-		this._shadow = this.attachShadow({mode: 'open'});
-		this._shadow.appendChild(document.importNode(template.content, true));
+        constructor() {
+            super();
+            this._shadow = this.attachShadow({
+                mode: 'open'
+            });
+            this._shadow.appendChild(document.importNode(template.content, true));
 
-        this._dom = {
-          me: this._shadow,
-          global: this._shadow.querySelector('.nyroVideo'),
-          content: this._shadow.querySelector('.nyroVideoContent'),
-          seeking: this._shadow.querySelector('.nyroVideoSeeking'),
-          video: this._shadow.querySelector('video'),
-          ad: this._shadow.querySelector('.nyroVideoAd')
-        };
+            this._dom = {
+                me: this._shadow,
+                global: this._shadow.querySelector('.nyroVideo'),
+                content: this._shadow.querySelector('.nyroVideoContent'),
+                seeking: this._shadow.querySelector('.nyroVideoSeeking'),
+                video: this._shadow.querySelector('video'),
+                ad: this._shadow.querySelector('.nyroVideoAd')
+            };
 
-        videoEvts.forEach(function(evt) {
-          this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
-        }.bind(this));
+            videoEvts.forEach(function(evt) {
+                this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
+            }.bind(this));
 
-        if (!isTouch) {
-          this.addEventListener('mouseleave', function() {
-            if (!this.paused) {
-              this._dom.content.classList.add('hideUi');
+            if (!isTouch) {
+                this.addEventListener('mouseleave', function() {
+                    if (!this.paused) {
+                        this._dom.content.classList.add('hideUi');
+                    }
+                }.bind(this), evtPassivePrm);
+                this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
+                this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
             }
-          }.bind(this), evtPassivePrm);
-          this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
-          this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
-        }
-      }
-
-      connectedCallback() {
-          if (window.ShadyCSS) {
-              window.ShadyCSS.styleElement(this);
-          }
-        this._src = this.getAttribute('src');
-        if (!this._src) {
-          throw new Error('no src attribute found');
         }
 
-        if (this.hasAttribute('muted')) {
-          this.volume = 0;
-          this.muted = true;
-        }
+        connectedCallback() {
+            if (window.ShadyCSS) {
+                window.ShadyCSS.styleElement(this);
+            }
+            this._src = this.getAttribute('src');
+            if (!this._src) {
+                throw new Error('no src attribute found');
+            }
 
-        this._autoplay = this.hasAttribute('autoplay');
+            if (this.hasAttribute('muted')) {
+                this.volume = 0;
+                this.muted = true;
+            }
 
-        if (this._autoplay) {
-          this._dom.video.setAttribute('playsinline', '');
-        }
+            this._autoplay = this.hasAttribute('autoplay');
 
-        if (this.hasAttribute('controls')) {
-          this._initControls(this.getAttribute('controls'));
-        }
+            if (this._autoplay) {
+                this._dom.video.setAttribute('playsinline', '');
+            }
 
-        this._canPlay = false;
-        if (this._src.endsWith('.m3u8') && !canPlayNativeHls) {
-          loadScript('hls', this._resLoaded.bind(this), this._resError.bind(this));
-        } else {
-          this._dom.video.setAttribute('src', this._src);
-        }
+            if (this.hasAttribute('controls')) {
+                this._initControls(this.getAttribute('controls'));
+            }
 
-        this._ads = this.getAttribute('ads');
-        if (this._ads) {
-          loadScript('ima3', this._resLoaded.bind(this), this._resError.bind(this));
-        }
-
-        this._tryAutoPlay();
-      }
-
-      _showUiTimer() {
-        this._dom.content.classList.remove('hideUi');
-        this._hideUiTimer();
-      }
-      _hideUiTimer() {
-        if (this._uiTimer) {
-          clearTimeout(this._uiTimer);
-        }
-        this._uiTimer = setTimeout(function() {
-          if (!this.paused && !this._hoverControls) {
-            this._dom.content.classList.add('hideUi');
-          }
-          this._uiTimer = false;
-        }.bind(this), 3000);
-      }
-
-      _initControls(controls) {
-        const avlControls = [
-          'progress',
-          'playPause',
-          'volume',
-          'currentTime',
-          'remainingTime',
-          'timeDiviser',
-          'duration',
-          'quality',
-          'fullscreen',
-          'spacer'
-        ];
-        if (controls) {
-          controls = controls.split(',');
-        } else {
-          controls = [
-            'progress',
-            'playPause',
-            'volume',
-            'currentTime',
-            'timeDiviser',
-            'duration',
-            'spacer',
-            'quality',
-            'fullscreen'
-          ];
-        }
-
-        if (controls.length === 0) {
-          return;
-        }
-
-        var html = '<div class="nyroVideoControls">';
-        var htmlAd = '';
-        controls.forEach(function(control) {
-          switch(control) {
-            case 'progress':
-              html+= '<div class="nyroVideoProgress"><div class="nyroVideoProgressLoad"></div><div class="nyroVideoProgressRead"></div></div>';
-              break;
-            case 'playPause':
-              html+= '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">Play</button><button class="nyroVideoPause">Pause</button></div>';
-              break;
-            case 'volume':
-              html+= '<div class="nyroVideoVolume"><button class="nyroVideoMute">Mute</button><button class="nyroVideoUnmute">Unmute</button>';
-              if (!isTouch) {
-                html+= '<div class="nyroVideoVolumeBar"><div class="nyroVideoVolumeCursor"></div></div>';
-              }
-              html+= '</div>';
-              htmlAd+= '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">Mute</button><button class="nyroVideoUnmute">Unmute</button></div>';
-              break;
-            case 'currentTime':
-              html+= '<div class="nyroVideoCurrentTime"></div>';
-              break;
-            case 'remainingTime':
-              html+= '<div class="nyroVideoRemainingTime"></div>';
-              break;
-            case 'timeDiviser':
-              html+= '<div class="nyroVideoTimeDiviser"></div>';
-              break;
-            case 'duration':
-              html+= '<div class="nyroVideoDuration"></div>';
-              break;
-            case 'quality':
-              html+= '<div class="nyroVideoQuality"></div>';
-              break;
-            case 'fullscreen':
-              if (canFullScreen) {
-                html+= '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">Fullscreen</button><button class="nyroVideoExitFullscreen">Exit Fullscreen</button></div>';
-              }
-              break;
-            case 'spacer':
-              html+= '<div class="nyroVideoSpacer"></div>';
-              break;
-            default:
-              throw new Error('control '+control+' not recognized.');
-              break;
-          }
-        });
-        html+= '</div>';
-
-        if (htmlAd) {
-          this._dom.ad.innerHTML+= htmlAd;
-        }
-
-        this._dom.video.insertAdjacentHTML('afterend', html);
-        this._dom.controls = this._dom.me.querySelector('.nyroVideoControls');
-        this._dom.subConstrols = {};
-
-        if (isTouch) {
-          this._dom.video.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            if (this._dom.content.classList.contains('hideUi')) {
-              this._showUiTimer();
+            this._canPlay = false;
+            if (this._src.endsWith('.m3u8') && !canPlayNativeHls) {
+                loadScript('hls', this._resLoaded.bind(this), this._resError.bind(this));
             } else {
-              this.toggle();
+                this._dom.video.setAttribute('src', this._src);
             }
-          }.bind(this));
-        } else {
-          this._dom.controls.addEventListener('mouseenter', function() {
-            this._hoverControls = true;
-          }.bind(this), evtPassivePrm);
-          this._dom.controls.addEventListener('mouseleave', function() {
-            this._hoverControls = false;
+
+            this._ads = this.getAttribute('ads');
+            if (this._ads) {
+                loadScript('ima3', this._resLoaded.bind(this), this._resError.bind(this));
+            }
+
+            this._tryAutoPlay();
+        }
+
+        _showUiTimer() {
+            this._dom.content.classList.remove('hideUi');
             this._hideUiTimer();
-          }.bind(this), evtPassivePrm);
-          this._dom.video.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.toggle();
-          }.bind(this));
+        }
+        _hideUiTimer() {
+            if (this._uiTimer) {
+                clearTimeout(this._uiTimer);
+            }
+            this._uiTimer = setTimeout(function() {
+                if (!this.paused && !this._hoverControls) {
+                    this._dom.content.classList.add('hideUi');
+                }
+                this._uiTimer = false;
+            }.bind(this), 3000);
         }
 
-        if (controls.indexOf('progress') !== -1) {
-          this._dom.subConstrols.progress = this._dom.global.querySelectorAll('.nyroVideoProgress');
-          this._dom.subConstrols.progress_load = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressLoad');
-          this._dom.subConstrols.progress_read = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressRead');
-
-          const moveProgressBar = function(e, el) {
-            var duration = this.duration;
-            if (!e || !duration || (e.touches && e.touches.length === 0)) {
-              return;
+        _initControls(controls) {
+            const avlControls = [
+                'progress',
+                'playPause',
+                'volume',
+                'currentTime',
+                'remainingTime',
+                'timeDiviser',
+                'duration',
+                'quality',
+                'fullscreen',
+                'spacer'
+            ];
+            if (controls) {
+                controls = controls.split(',');
+            } else {
+                controls = [
+                    'progress',
+                    'playPause',
+                    'volume',
+                    'currentTime',
+                    'timeDiviser',
+                    'duration',
+                    'spacer',
+                    'quality',
+                    'fullscreen'
+                ];
             }
-            //e.preventDefault();
-            if (!el) {
-              el = this._dom.mousemove;
-            }
-            if (!el) {
-              return;
-            }
-            var rect = el.getBoundingClientRect(),
-              evtX = e.touches ? e.touches[0].pageX : e.pageX,
-              offsetX = evtX - rect.left;
-            if (offsetX < 0) {
-              offsetX = 0;
-            } else if (offsetX > rect.width) {
-              offsetX = rect.width;
-            }
-            var pc = offsetX / rect.width;
-            this._forcedCurentTime  = duration * pc;
-            this._updateControls('time');
-            this.currentTime = duration * pc;
-          }.bind(this);
-          const moveProgressBarEnd = function() {
-            this._forcedCurentTime = false;
-            if (!this._progressPaused) {
-              this.play();
-            }
-          }.bind(this);
-          this._dom.subConstrols.progress.forEach(function(el) {
-            el.addEventListener(evtPointerStart, function(e) {
-              this._progressPaused = this.paused;
-              if (!this._progressPaused) {
-                this.pause();
-              }
-              moveProgressBar(e, el);
-              this._dom.mousemove = el;
-              this._dom.content.addEventListener(evtPointerMove, moveProgressBar, evtPassivePrm);
-              documentClbPointerEnd(function(e) {
-                this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
-                moveProgressBar(e);
-                moveProgressBarEnd();
-              }.bind(this));
-            }.bind(this), evtPassivePrm);
-            el.addEventListener(evtPointerEnd, function(e) {
-              this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
-              this._dom.mousemove = false;
-              moveProgressBar(e, el);
-              moveProgressBarEnd();
-            }.bind(this));
-          }.bind(this), evtPassivePrm);
-        }
 
-        if (controls.indexOf('playPause') !== -1) {
-          this._dom.subConstrols.playPause = this._dom.global.querySelectorAll('.nyroVideoPlayPause');
-          this._dom.subConstrols.playPause_play = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPlay');
-          this._dom.subConstrols.playPause_pause = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPause');
-
-          this._dom.subConstrols.playPause_play.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.play();
-            }.bind(this));
-          }.bind(this));
-          this._dom.subConstrols.playPause_pause.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.pause();
-            }.bind(this));
-          }.bind(this));
-        }
-
-        if (controls.indexOf('volume') !== -1) {
-          this._dom.subConstrols.volume = this._dom.global.querySelectorAll('.nyroVideoVolume');
-          this._dom.subConstrols.volume_mute = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoMute, .nyroVideoAdVolume .nyroVideoMute');
-          this._dom.subConstrols.volume_unmute = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoUnmute, .nyroVideoAdVolume .nyroVideoUnmute');
-          this._dom.subConstrols.volume_bar = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeBar');
-          this._dom.subConstrols.volume_cursor = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeCursor');
-
-          this._dom.subConstrols.volume_mute.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.muted = true;
-            }.bind(this));
-          }.bind(this));
-          this._dom.subConstrols.volume_unmute.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.muted = false;
-            }.bind(this));
-          }.bind(this));
-
-          if (!isTouch) {
-            const moveVolumeBar = function(e, el) {
-              if (!e) {
+            if (controls.length === 0) {
                 return;
-              }
-              //e.preventDefault();
-              if (!el) {
-                el = this._dom.mousemove;
-              }
-              if (!el) {
-                return;
-              }
-              var rect = el.getBoundingClientRect(),
-                offsetX = e.pageX - rect.left;
-              if (offsetX < 0) {
-                offsetX = 0;
-              } else if (offsetX > rect.width) {
-                offsetX = rect.width;
-              }
-              var pc = offsetX / rect.width;
-              this.volume = pc;
-            }.bind(this);
-            this._dom.subConstrols.volume_bar.forEach(function(el) {
-              el.addEventListener(evtPointerStart, function(e) {
-                moveVolumeBar(e, el);
-                this._dom.mousemove = el;
-                this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, evtPassivePrm);
-                documentClbPointerEnd(function(e) {
-                  this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
-                  moveVolumeBar(e);
+            }
+
+            var html = '<div class="nyroVideoControls">';
+            var htmlAd = '';
+            controls.forEach(function(control) {
+                switch (control) {
+                    case 'progress':
+                        html += '<div class="nyroVideoProgress"><div class="nyroVideoProgressLoad"></div><div class="nyroVideoProgressRead"></div></div>';
+                        break;
+                    case 'playPause':
+                        html += '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">Play</button><button class="nyroVideoPause">Pause</button></div>';
+                        break;
+                    case 'volume':
+                        html += '<div class="nyroVideoVolume"><button class="nyroVideoMute">Mute</button><button class="nyroVideoUnmute">Unmute</button>';
+                        if (!isTouch) {
+                            html += '<div class="nyroVideoVolumeBar"><div class="nyroVideoVolumeCursor"></div></div>';
+                        }
+                        html += '</div>';
+                        htmlAd += '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">Mute</button><button class="nyroVideoUnmute">Unmute</button></div>';
+                        break;
+                    case 'currentTime':
+                        html += '<div class="nyroVideoCurrentTime"></div>';
+                        break;
+                    case 'remainingTime':
+                        html += '<div class="nyroVideoRemainingTime"></div>';
+                        break;
+                    case 'timeDiviser':
+                        html += '<div class="nyroVideoTimeDiviser"></div>';
+                        break;
+                    case 'duration':
+                        html += '<div class="nyroVideoDuration"></div>';
+                        break;
+                    case 'quality':
+                        html += '<div class="nyroVideoQuality"></div>';
+                        break;
+                    case 'fullscreen':
+                        if (canFullScreen) {
+                            html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">Fullscreen</button><button class="nyroVideoExitFullscreen">Exit Fullscreen</button></div>';
+                        }
+                        break;
+                    case 'spacer':
+                        html += '<div class="nyroVideoSpacer"></div>';
+                        break;
+                    default:
+                        throw new Error('control ' + control + ' not recognized.');
+                        break;
+                }
+            });
+            html += '</div>';
+
+            if (htmlAd) {
+                this._dom.ad.innerHTML += htmlAd;
+            }
+
+            this._dom.video.insertAdjacentHTML('afterend', html);
+            this._dom.controls = this._dom.me.querySelector('.nyroVideoControls');
+            this._dom.subConstrols = {};
+
+            if (isTouch) {
+                this._dom.video.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    if (this._dom.content.classList.contains('hideUi')) {
+                        this._showUiTimer();
+                    } else {
+                        this.toggle();
+                    }
                 }.bind(this));
-              }.bind(this), evtPassivePrm);
-              el.addEventListener(evtPointerEnd, function(e) {
-                this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
-                this._dom.mousemove = false;
-                moveVolumeBar(e, el);
-              }.bind(this));
-            }.bind(this), evtPassivePrm, evtPassivePrm);
-          }
-
-          this._updateControls('volume');
-        }
-
-        if (controls.indexOf('currentTime') !== -1) {
-          this._dom.subConstrols.currentTime = this._dom.global.querySelectorAll('.nyroVideoCurrentTime');
-        }
-
-        if (controls.indexOf('remainingTime') !== -1) {
-          this._dom.subConstrols.remainingTime = this._dom.global.querySelectorAll('.nyroVideoRemainingTime');
-        }
-
-        if (controls.indexOf('duration') !== -1) {
-          this._dom.subConstrols.duration = this._dom.global.querySelectorAll('.nyroVideoDuration');
-        }
-
-        if (controls.indexOf('quality') !== -1) {
-          this._dom.subConstrols.quality = this._dom.global.querySelectorAll('.nyroVideoQuality');
-        }
-
-        if (controls.indexOf('fullscreen') !== -1) {
-          this._dom.subConstrols.fullscreen = this._dom.global.querySelectorAll('.nyroVideoFullscreen');
-          this._dom.subConstrols.fullscreen_enter = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoEnterFullscreen');
-          this._dom.subConstrols.fullscreen_exit = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoExitFullscreen');
-
-          this._dom.subConstrols.fullscreen_enter.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.fullscreen();
-            }.bind(this));
-          }.bind(this));
-          this._dom.subConstrols.fullscreen_exit.forEach(function(el) {
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              this.exitFullscreen();
-            }.bind(this));
-          }.bind(this));
-        }
-      }
-
-      _onVideoEvt(e) {
-        switch(e.type) {
-          case 'loadedmetadata':
-          case 'loadeddata':
-          case 'durationchange':
-            if (!this._videoWidthReceived) {
-              var w = this._dom.video.videoWidth;
-              if (w) {
-                this._videoWidthReceived = true;
-                if (!this.hasAttribute('discard-aspect-ratio')) {
-                  var h = this._dom.video.videoHeight,
-                    ratio = 100 * h / w;
-                  this._dom.global.style.height = '0';
-                  this._dom.global.style.paddingTop = ratio+'%';
-                  this.style.height = 'auto';
-                  this._resizeIma3();
-                }
-                this._canPlay = true;
-                this._tryAutoPlay();
-              }
-            }
-            this._updateControls('duration');
-            break;
-          case 'timeupdate':
-            this._updateControls('time');
-            break;
-          case 'progress':
-            this._updateControls('load');
-            break;
-          case 'play':
-          case 'pause':
-            this._updateControls('state');
-            break;
-          case 'volumechange':
-            this._updateControls('volume');
-            break;
-          case 'seeking':
-            this._dom.seeking.style.display = 'block';
-            break;
-          case 'seeked':
-            this._dom.seeking.style.display = 'none';
-            break;
-          case 'ended':
-            if (this._ima3 && this._ima3.loader) {
-              this._ima3.loader.contentComplete();
             } else {
-              this.currentTime = 0;
-            }
-            break;
-        }
-      }
-
-      _updateControls(type) {
-        if (!this._dom.controls || !this._dom.subConstrols) {
-          return;
-        }
-        switch(type) {
-          case 'duration':
-            if (this._dom.subConstrols.duration) {
-              const durationText = humanTime(this.duration);
-              this._dom.subConstrols.duration.forEach(function(el) {
-                el.textContent = durationText;
-              });
+                this._dom.controls.addEventListener('mouseenter', function() {
+                    this._hoverControls = true;
+                }.bind(this), evtPassivePrm);
+                this._dom.controls.addEventListener('mouseleave', function() {
+                    this._hoverControls = false;
+                    this._hideUiTimer();
+                }.bind(this), evtPassivePrm);
+                this._dom.video.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    this.toggle();
+                }.bind(this));
             }
 
-            this._updateControls('time');
-            break;
-          case 'time':
-            const duration = this.duration,
-              current = this._forcedCurentTime || this.currentTime;
-            if (this._dom.subConstrols.progress_read) {
-              const pcTime = 100 * current/duration;
-              this._dom.subConstrols.progress_read.forEach(function(el) {
-                el.style.width = pcTime+'%';
-              });
-            }
-            if (this._dom.subConstrols.currentTime) {
-              const currentText = humanTime(current);
-              this._dom.subConstrols.currentTime.forEach(function(el) {
-                el.textContent = currentText;
-              });
-            }
-            if (this._dom.subConstrols.remainingTime) {
-              const remainingText = '-'+humanTime(duration - current);
-              this._dom.subConstrols.remainingTime.forEach(function(el) {
-                el.textContent = remainingText;
-              });
-            }
-            break;
-          case 'load':
-            if (this._dom.subConstrols.progress_load) {
-              var loaded = 0;
-              if (this._dom.video.buffered && this._dom.video.buffered.length) {
-                for (var i = 0; i < this._dom.video.buffered.length; i++) {
-                    loaded = Math.max(loaded, this._dom.video.buffered.end(i));
-                }
-              }
+            if (controls.indexOf('progress') !== -1) {
+                this._dom.subConstrols.progress = this._dom.global.querySelectorAll('.nyroVideoProgress');
+                this._dom.subConstrols.progress_load = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressLoad');
+                this._dom.subConstrols.progress_read = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressRead');
 
-              var pcLoaded = 100 * loaded / this.duration;
-              this._dom.subConstrols.progress_load.forEach(function(el) {
-                el.style.width = pcLoaded+'%';
-              });
-            }
-            break;
-          case 'state':
-            if (this._dom.video.paused) {
-              this._dom.content.classList.remove('playing');
-              this._dom.content.classList.remove('hideUi');
-            } else {
-              this._dom.content.classList.add('playing');
-              this._hideUiTimer();
-            }
-            break;
-          case 'volume':
-            var volume = this.volume,
-              muted = this.muted;
-            if (muted) {
-              this._dom.global.classList.add('muted');
-            } else {
-              this._dom.global.classList.remove('muted');
-              if (this._dom.subConstrols.volume_cursor) {
-                this._dom.subConstrols.volume_cursor.forEach(function(el) {
-                  el.style.width = (volume * 100)+'%';
-                });
-              }
-            }
-            break;
-        }
-      }
-
-      _resLoaded(name) {
-        if (name === 'hls') {
-          if (Hls.isSupported()) {
-            this._canPlay = true;
-            this._hls = new Hls();
-            this._hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                if (!this._dom.subConstrols.quality) {
-                    return;
-                }
-                if (this._hls.levels.length > 1) {
-                    let lines = [];
-                    lines.push('<li><button data-index="-1" class="selected">auto</button></li>');
-                    this._hls.levels.forEach(function(level, idx) {
-                        lines.push('<li><button data-index="'+idx+'">'+level.name+'</button></li>');
-                    });
-                    let html = '<ul>'+lines.reverse().join('')+'</ul>';
-                    html+= '<strong>auto</strong>';
-                    this._dom.subConstrols.quality.forEach(function(el) {
-                        el.innerHTML = html;
-                    });
-                    this._dom.subConstrols.quality_display = this._dom.global.querySelectorAll('.nyroVideoQuality strong');
-                    this._dom.subConstrols.quality_buttons = this._dom.global.querySelectorAll('.nyroVideoQuality button');
-
-                      this._dom.subConstrols.quality_buttons.forEach(function(el) {
-                        el.addEventListener('click', function(e) {
-                          if (!this._hls) {
-                              return;
-                          }
-                          e.preventDefault();
-                          const newLevel = parseInt(el.dataset.index);
-                          if (newLevel === this._hls.currentLevel || (newLevel === -1 && this._hls.autoLevelEnabled)) {
-                              return;
-                          }
-                          this._hls.currentLevel = newLevel;
-
-                          if (this._dom.subConstrols.quality_buttons) {
-                              this._dom.subConstrols.quality_buttons.forEach(function(but) {
-                                  if (but === el) {
-                                      but.classList.add('selected');
-                                  } else {
-                                      but.classList.remove('selected');
-                                  }
-                              });
-                          }
-                          if (this._dom.subConstrols.quality_display) {
-                              this._dom.subConstrols.quality_display.forEach(function(display) {
-                                  display.textContent = el.textContent;
-                              });
-                          }
-
+                const moveProgressBar = function(e, el) {
+                    var duration = this.duration;
+                    if (!e || !duration || (e.touches && e.touches.length === 0)) {
+                        return;
+                    }
+                    //e.preventDefault();
+                    if (!el) {
+                        el = this._dom.mousemove;
+                    }
+                    if (!el) {
+                        return;
+                    }
+                    var rect = el.getBoundingClientRect(),
+                        evtX = e.touches ? e.touches[0].pageX : e.pageX,
+                        offsetX = evtX - rect.left;
+                    if (offsetX < 0) {
+                        offsetX = 0;
+                    } else if (offsetX > rect.width) {
+                        offsetX = rect.width;
+                    }
+                    var pc = offsetX / rect.width;
+                    this._forcedCurentTime = duration * pc;
+                    this._updateControls('time');
+                    this.currentTime = duration * pc;
+                }.bind(this);
+                const moveProgressBarEnd = function() {
+                    this._forcedCurentTime = false;
+                    if (!this._progressPaused) {
+                        this.play();
+                    }
+                }.bind(this);
+                this._dom.subConstrols.progress.forEach(function(el) {
+                    el.addEventListener(evtPointerStart, function(e) {
+                        this._progressPaused = this.paused;
+                        if (!this._progressPaused) {
+                            this.pause();
+                        }
+                        moveProgressBar(e, el);
+                        this._dom.mousemove = el;
+                        this._dom.content.addEventListener(evtPointerMove, moveProgressBar, evtPassivePrm);
+                        documentClbPointerEnd(function(e) {
+                            this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
+                            moveProgressBar(e);
+                            moveProgressBarEnd();
                         }.bind(this));
-                      }.bind(this));
+                    }.bind(this), evtPassivePrm);
+                    el.addEventListener(evtPointerEnd, function(e) {
+                        this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
+                        this._dom.mousemove = false;
+                        moveProgressBar(e, el);
+                        moveProgressBarEnd();
+                    }.bind(this));
+                }.bind(this), evtPassivePrm);
+            }
+
+            if (controls.indexOf('playPause') !== -1) {
+                this._dom.subConstrols.playPause = this._dom.global.querySelectorAll('.nyroVideoPlayPause');
+                this._dom.subConstrols.playPause_play = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPlay');
+                this._dom.subConstrols.playPause_pause = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPause');
+
+                this._dom.subConstrols.playPause_play.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.play();
+                    }.bind(this));
+                }.bind(this));
+                this._dom.subConstrols.playPause_pause.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.pause();
+                    }.bind(this));
+                }.bind(this));
+            }
+
+            if (controls.indexOf('volume') !== -1) {
+                this._dom.subConstrols.volume = this._dom.global.querySelectorAll('.nyroVideoVolume');
+                this._dom.subConstrols.volume_mute = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoMute, .nyroVideoAdVolume .nyroVideoMute');
+                this._dom.subConstrols.volume_unmute = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoUnmute, .nyroVideoAdVolume .nyroVideoUnmute');
+                this._dom.subConstrols.volume_bar = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeBar');
+                this._dom.subConstrols.volume_cursor = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeCursor');
+
+                this._dom.subConstrols.volume_mute.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.muted = true;
+                    }.bind(this));
+                }.bind(this));
+                this._dom.subConstrols.volume_unmute.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.muted = false;
+                    }.bind(this));
+                }.bind(this));
+
+                if (!isTouch) {
+                    const moveVolumeBar = function(e, el) {
+                        if (!e) {
+                            return;
+                        }
+                        //e.preventDefault();
+                        if (!el) {
+                            el = this._dom.mousemove;
+                        }
+                        if (!el) {
+                            return;
+                        }
+                        var rect = el.getBoundingClientRect(),
+                            offsetX = e.pageX - rect.left;
+                        if (offsetX < 0) {
+                            offsetX = 0;
+                        } else if (offsetX > rect.width) {
+                            offsetX = rect.width;
+                        }
+                        var pc = offsetX / rect.width;
+                        this.volume = pc;
+                    }.bind(this);
+                    this._dom.subConstrols.volume_bar.forEach(function(el) {
+                        el.addEventListener(evtPointerStart, function(e) {
+                            moveVolumeBar(e, el);
+                            this._dom.mousemove = el;
+                            this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, evtPassivePrm);
+                            documentClbPointerEnd(function(e) {
+                                this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
+                                moveVolumeBar(e);
+                            }.bind(this));
+                        }.bind(this), evtPassivePrm);
+                        el.addEventListener(evtPointerEnd, function(e) {
+                            this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
+                            this._dom.mousemove = false;
+                            moveVolumeBar(e, el);
+                        }.bind(this));
+                    }.bind(this), evtPassivePrm, evtPassivePrm);
+                }
+
+                this._updateControls('volume');
+            }
+
+            if (controls.indexOf('currentTime') !== -1) {
+                this._dom.subConstrols.currentTime = this._dom.global.querySelectorAll('.nyroVideoCurrentTime');
+            }
+
+            if (controls.indexOf('remainingTime') !== -1) {
+                this._dom.subConstrols.remainingTime = this._dom.global.querySelectorAll('.nyroVideoRemainingTime');
+            }
+
+            if (controls.indexOf('duration') !== -1) {
+                this._dom.subConstrols.duration = this._dom.global.querySelectorAll('.nyroVideoDuration');
+            }
+
+            if (controls.indexOf('quality') !== -1) {
+                this._dom.subConstrols.quality = this._dom.global.querySelectorAll('.nyroVideoQuality');
+            }
+
+            if (controls.indexOf('fullscreen') !== -1) {
+                this._dom.subConstrols.fullscreen = this._dom.global.querySelectorAll('.nyroVideoFullscreen');
+                this._dom.subConstrols.fullscreen_enter = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoEnterFullscreen');
+                this._dom.subConstrols.fullscreen_exit = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoExitFullscreen');
+
+                this._dom.subConstrols.fullscreen_enter.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.fullscreen();
+                    }.bind(this));
+                }.bind(this));
+                this._dom.subConstrols.fullscreen_exit.forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.exitFullscreen();
+                    }.bind(this));
+                }.bind(this));
+            }
+        }
+
+        _onVideoEvt(e) {
+            switch (e.type) {
+                case 'loadedmetadata':
+                case 'loadeddata':
+                case 'durationchange':
+                    if (!this._videoWidthReceived) {
+                        var w = this._dom.video.videoWidth;
+                        if (w) {
+                            this._videoWidthReceived = true;
+                            if (!this.hasAttribute('discard-aspect-ratio')) {
+                                var h = this._dom.video.videoHeight,
+                                    ratio = 100 * h / w;
+                                this._dom.global.style.height = '0';
+                                this._dom.global.style.paddingTop = ratio + '%';
+                                this.style.height = 'auto';
+                                this._resizeIma3();
+                            }
+                            this._canPlay = true;
+                            this._tryAutoPlay();
+                        }
+                    }
+                    this._updateControls('duration');
+                    break;
+                case 'timeupdate':
+                    this._updateControls('time');
+                    break;
+                case 'progress':
+                    this._updateControls('load');
+                    break;
+                case 'play':
+                case 'pause':
+                    this._updateControls('state');
+                    break;
+                case 'volumechange':
+                    this._updateControls('volume');
+                    break;
+                case 'seeking':
+                    this._dom.seeking.style.display = 'block';
+                    break;
+                case 'seeked':
+                    this._dom.seeking.style.display = 'none';
+                    break;
+                case 'ended':
+                    if (this._ima3 && this._ima3.loader) {
+                        this._ima3.loader.contentComplete();
+                    } else {
+                        this.currentTime = 0;
+                    }
+                    break;
+            }
+        }
+
+        _updateControls(type) {
+            if (!this._dom.controls || !this._dom.subConstrols) {
+                return;
+            }
+            switch (type) {
+                case 'duration':
+                    if (this._dom.subConstrols.duration) {
+                        const durationText = humanTime(this.duration);
+                        this._dom.subConstrols.duration.forEach(function(el) {
+                            el.textContent = durationText;
+                        });
+                    }
+
+                    this._updateControls('time');
+                    break;
+                case 'time':
+                    const duration = this.duration,
+                        current = this._forcedCurentTime || this.currentTime;
+                    if (this._dom.subConstrols.progress_read) {
+                        const pcTime = 100 * current / duration;
+                        this._dom.subConstrols.progress_read.forEach(function(el) {
+                            el.style.width = pcTime + '%';
+                        });
+                    }
+                    if (this._dom.subConstrols.currentTime) {
+                        const currentText = humanTime(current);
+                        this._dom.subConstrols.currentTime.forEach(function(el) {
+                            el.textContent = currentText;
+                        });
+                    }
+                    if (this._dom.subConstrols.remainingTime) {
+                        const remainingText = '-' + humanTime(duration - current);
+                        this._dom.subConstrols.remainingTime.forEach(function(el) {
+                            el.textContent = remainingText;
+                        });
+                    }
+                    break;
+                case 'load':
+                    if (this._dom.subConstrols.progress_load) {
+                        var loaded = 0;
+                        if (this._dom.video.buffered && this._dom.video.buffered.length) {
+                            for (var i = 0; i < this._dom.video.buffered.length; i++) {
+                                loaded = Math.max(loaded, this._dom.video.buffered.end(i));
+                            }
+                        }
+
+                        var pcLoaded = 100 * loaded / this.duration;
+                        this._dom.subConstrols.progress_load.forEach(function(el) {
+                            el.style.width = pcLoaded + '%';
+                        });
+                    }
+                    break;
+                case 'state':
+                    if (this._dom.video.paused) {
+                        this._dom.content.classList.remove('playing');
+                        this._dom.content.classList.remove('hideUi');
+                    } else {
+                        this._dom.content.classList.add('playing');
+                        this._hideUiTimer();
+                    }
+                    break;
+                case 'volume':
+                    var volume = this.volume,
+                        muted = this.muted;
+                    if (muted) {
+                        this._dom.global.classList.add('muted');
+                    } else {
+                        this._dom.global.classList.remove('muted');
+                        if (this._dom.subConstrols.volume_cursor) {
+                            this._dom.subConstrols.volume_cursor.forEach(function(el) {
+                                el.style.width = (volume * 100) + '%';
+                            });
+                        }
+                    }
+                    break;
+            }
+        }
+
+        _resLoaded(name) {
+            if (name === 'hls') {
+                if (Hls.isSupported()) {
+                    this._canPlay = true;
+                    this._hls = new Hls();
+                    this._hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        if (!this._dom.subConstrols.quality) {
+                            return;
+                        }
+                        if (this._hls.levels.length > 1) {
+                            let lines = [];
+                            lines.push('<li><button data-index="-1" class="selected">auto</button></li>');
+                            this._hls.levels.forEach(function(level, idx) {
+                                lines.push('<li><button data-index="' + idx + '">' + level.name + '</button></li>');
+                            });
+                            let html = '<ul>' + lines.reverse().join('') + '</ul>';
+                            html += '<strong>auto</strong>';
+                            this._dom.subConstrols.quality.forEach(function(el) {
+                                el.innerHTML = html;
+                            });
+                            this._dom.subConstrols.quality_display = this._dom.global.querySelectorAll('.nyroVideoQuality strong');
+                            this._dom.subConstrols.quality_buttons = this._dom.global.querySelectorAll('.nyroVideoQuality button');
+
+                            this._dom.subConstrols.quality_buttons.forEach(function(el) {
+                                el.addEventListener('click', function(e) {
+                                    if (!this._hls) {
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    const newLevel = parseInt(el.dataset.index);
+                                    if (newLevel === this._hls.currentLevel || (newLevel === -1 && this._hls.autoLevelEnabled)) {
+                                        return;
+                                    }
+                                    this._hls.currentLevel = newLevel;
+
+                                    if (this._dom.subConstrols.quality_buttons) {
+                                        this._dom.subConstrols.quality_buttons.forEach(function(but) {
+                                            if (but === el) {
+                                                but.classList.add('selected');
+                                            } else {
+                                                but.classList.remove('selected');
+                                            }
+                                        });
+                                    }
+                                    if (this._dom.subConstrols.quality_display) {
+                                        this._dom.subConstrols.quality_display.forEach(function(display) {
+                                            display.textContent = el.textContent;
+                                        });
+                                    }
+
+                                }.bind(this));
+                            }.bind(this));
+
+                        } else {
+                            this._dom.subConstrols.quality.forEach(function(el) {
+                                el.style.display = 'none';
+                            });
+                        }
+                    }.bind(this));
+                    this._hls.on(Hls.Events.LEVEL_SWITCHED, function(level, data) {
+                        if (this._dom.subConstrols.quality_buttons) {
+                            this._dom.subConstrols.quality_buttons.forEach(function(el) {
+                                if (el.dataset.index == data.level) {
+                                    el.classList.add('using');
+                                } else {
+                                    el.classList.remove('using');
+                                }
+                            });
+                        }
+                    }.bind(this));
+                    this._hls.loadSource(this._src);
+                    this._hls.attachMedia(this._dom.video);
+
+                    this._tryAutoPlay();
 
                 } else {
-                    this._dom.subConstrols.quality.forEach(function(el) {
-                        el.style.display = 'none';
-                    });
+                    throw new Error('Impossible to read '.this._src);
                 }
-            }.bind(this));
-            this._hls.on(Hls.Events.LEVEL_SWITCHED, function(level, data) {
-                if (this._dom.subConstrols.quality_buttons) {
-                    this._dom.subConstrols.quality_buttons.forEach(function(el) {
-                        if (el.dataset.index == data.level) {
-                            el.classList.add('using');
+            } else if (name === 'ima3') {
+                this._ima3 = {
+                    container: new google.ima.AdDisplayContainer(this._dom.ad, this._dom.video)
+                };
+                this._ima3.loader = new google.ima.AdsLoader(this._ima3.container);
+
+                this._ima3.loader.addEventListener(
+                    google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+                    function(adsManagerLoadedEvent) {
+                        // Get the ads manager.
+                        this._ima3.renderingSettings = new google.ima.AdsRenderingSettings();
+                        this._ima3.renderingSettings.restoreCustomPlaybackStateOnAdBreakComplete = true;
+
+                        // Preloading give some error on mobile
+                        this._ima3.renderingSettings.enablePreloading = !isTouch;
+
+                        this._ima3.manager = adsManagerLoadedEvent.getAdsManager(this._dom.video, this._ima3.renderingSettings);
+
+                        addResizeClb(function() {
+                            this._resizeIma3();
+                        }.bind(this));
+
+                        // Add listeners to the required events.
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdErrorEvent.Type.AD_ERROR,
+                            this._onAdError.bind(this));
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
+                            this._onAdContentPauseRequested.bind(this));
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
+                            this._onAdContentResumeRequested.bind(this));
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.ALL_ADS_COMPLETED,
+                            this._onAdEvent.bind(this));
+
+                        // Listen to any additional events, if necessary.
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.LOADED,
+                            this._onAdEvent.bind(this));
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.STARTED,
+                            this._onAdEvent.bind(this));
+                        this._ima3.manager.addEventListener(
+                            google.ima.AdEvent.Type.COMPLETE,
+                            this._onAdEvent.bind(this));
+
+                        if (this._autplayOnAdLoad) {
+                            this._autplayOnAdLoad = false;
+                            this.play();
                         } else {
-                            el.classList.remove('using');
+                            this._tryAutoPlay();
                         }
-                    });
-                }
-            }.bind(this));
-            this._hls.loadSource(this._src);
-            this._hls.attachMedia(this._dom.video);
 
-            this._tryAutoPlay();
+                    }.bind(this),
+                    false);
 
-          } else {
-            throw new Error('Impossible to read '.this._src);
-          }
-        } else if (name === 'ima3') {
-          this._ima3 = {
-            container: new google.ima.AdDisplayContainer(this._dom.ad, this._dom.video)
-          };
-          this._ima3.loader = new google.ima.AdsLoader(this._ima3.container);
+                this._ima3.loader.addEventListener(
+                    google.ima.AdErrorEvent.Type.AD_ERROR,
+                    this._onAdError.bind(this),
+                    false);
 
-          this._ima3.loader.addEventListener(
-            google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
-            function(adsManagerLoadedEvent) {
-              // Get the ads manager.
-              this._ima3.renderingSettings = new google.ima.AdsRenderingSettings();
-              this._ima3.renderingSettings.restoreCustomPlaybackStateOnAdBreakComplete = true;
+                this._ima3.request = new google.ima.AdsRequest();
+                this._ima3.request.adTagUrl = this._ads;
 
-              // Preloading give some error on mobile
-              this._ima3.renderingSettings.enablePreloading = !isTouch;
+                this._ima3.request.linearAdSlotWidth = this.offsetWidth;
+                this._ima3.request.linearAdSlotHeight = this.offsetHeight;
 
-              this._ima3.manager = adsManagerLoadedEvent.getAdsManager(this._dom.video, this._ima3.renderingSettings);
+                this._ima3.request.nonLinearAdSlotWidth = this.offsetWidth;
+                this._ima3.request.nonLinearAdSlotHeight = 150;
 
-              addResizeClb(function() {
-                 this._resizeIma3();
-              }.bind(this));
-
-              // Add listeners to the required events.
-              this._ima3.manager.addEventListener(
-                  google.ima.AdErrorEvent.Type.AD_ERROR,
-                  this._onAdError.bind(this));
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
-                  this._onAdContentPauseRequested.bind(this));
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
-                  this._onAdContentResumeRequested.bind(this));
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.ALL_ADS_COMPLETED,
-                  this._onAdEvent.bind(this));
-
-              // Listen to any additional events, if necessary.
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.LOADED,
-                  this._onAdEvent.bind(this));
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.STARTED,
-                  this._onAdEvent.bind(this));
-              this._ima3.manager.addEventListener(
-                  google.ima.AdEvent.Type.COMPLETE,
-                  this._onAdEvent.bind(this));
-
-              if (this._autplayOnAdLoad) {
-                this._autplayOnAdLoad = false;
-                this.play();
-              } else {
-                this._tryAutoPlay();
-              }
-
-            }.bind(this),
-          false);
-
-          this._ima3.loader.addEventListener(
-              google.ima.AdErrorEvent.Type.AD_ERROR,
-              this._onAdError.bind(this),
-              false);
-
-          this._ima3.request = new google.ima.AdsRequest();
-          this._ima3.request.adTagUrl = this._ads;
-
-          this._ima3.request.linearAdSlotWidth = this.offsetWidth;
-          this._ima3.request.linearAdSlotHeight = this.offsetHeight;
-
-          this._ima3.request.nonLinearAdSlotWidth = this.offsetWidth;
-          this._ima3.request.nonLinearAdSlotHeight = 150;
-
-          if (this._autoplay) {
-            this._tryAutoPlay();
-          } else {
-            this._ima3.loader.requestAds(this._ima3.request);
-          }
-        }
-      }
-
-      _resError(name) {
-        if (name === 'hls') {
-          throw new Error('HLS not supported and error while loading library.');
-        } else if (name === 'ima3') {
-          this._ima3 = false;
-          this._ads = false;
-          this._tryAutoPlay();
-        }
-      }
-
-      _onAdError(adErrorEvent) {
-        console.log(adErrorEvent.getError());
-        this._ima3.manager.destroy();
-        this._ima3 = false;
-        this._ads = false;
-        this._dom.ad.style.display = 'none';
-
-        if (adErrorEvent.getError().getType() === google.ima.AdError.Type.AD_PLAY) {
-          this.play();
-        } else if (adErrorEvent.getError().getType() === google.ima.AdError.Type.AD_LOAD) {
-          this._tryAutoPlay();
-        }
-      }
-
-      _onAdContentPauseRequested() {
-          this._dom.video.pause();
-
-          this._dom.ad.style.display = 'block';
-      }
-
-      _onAdContentResumeRequested(e) {
-          if (this.ended) {
-            this.currentTime = 0;
-          } else {
-            this._dom.video.play();
-            this._updateControls('volume');
-          }
-
-          this._dom.ad.style.display = 'none';
-      }
-
-      _onAdEvent(adEvent) {
-        // Retrieve the ad from the event. Some events (e.g. ALL_ADS_COMPLETED)
-        // don't have ad object associated.
-        var ad = adEvent.getAd();
-        switch (adEvent.type) {
-          case google.ima.AdEvent.Type.LOADED:
-            // This is the first event sent for an ad - it is possible to
-            // determine whether the ad is a video ad or an overlay.
-            if (!ad.isLinear()) {
-              // Position AdDisplayContainer correctly for overlay.
-              // Use ad.width and ad.height.
-              this._dom.video.play();
-            } else {
-              this._ima3.manager.setVolume(this.muted ? 0 : this.volume);
-            }
-            break;
-          case google.ima.AdEvent.Type.STARTED:
-            // This event indicates the ad has started - the video player
-            // can adjust the UI, for example display a pause button and
-            // remaining time.
-            if (ad.isLinear()) {
-
-              // For a linear ad, a timer can be started to poll for
-              // the remaining time.
-              this._ima3.intervalTimer = setInterval(
-                  function() {
-                    var remainingTime = this._ima3.manager.getRemainingTime();
-                    // @todo show it
-                  }.bind(this),
-                  300); // every 300ms
-              this._ima3.playing = true;
-            }
-            break;
-          case google.ima.AdEvent.Type.COMPLETE:
-            // This event indicates the ad has finished - the video player
-            // can perform appropriate UI actions, such as removing the timer for
-            // remaining time detection.
-            if (ad.isLinear()) {
-              clearInterval(this._ima3.intervalTimer);
-              this._ima3.playing = false;
-            }
-            break;
-        }
-      }
-
-      _tryAutoPlay() {
-        if (
-          !this._autoplay
-          || !this._canPlay
-          || (this._ads && !this._ima3)
-        ) {
-          return;
-        }
-        // Everything is setup and autoplay was requested, try it
-        this._autoplay = false; // to be sure to come only once here
-
-        this._dom.video.play()
-          .then(function() {
-            // Play on current state
-
-            this._dom.video.pause();
-            this._dom.video.currentTime = 0;
-            if (this._ima3) {
-              this._autplayOnAdLoad = true;
-              this._ima3.request.setAdWillAutoPlay(true);
-              this._ima3.request.setAdWillPlayMuted(this.muted);
-              this._ima3.loader.requestAds(this._ima3.request);
-            } else {
-              this.play();
-            }
-          }.bind(this))
-          .catch(function() {
-            // Autoplay did not work, try as muted if not set
-            if (!this.muted) {
-              this.volume = 0;
-              this.muted = true;
-              this._dom.video.play()
-                .then(function() {
-                  // autoplay work as muted
-                  this._dom.video.pause();
-                  this._dom.video.currentTime = 0;
-
-                  if (this._ima3) {
-                    this._autplayOnAdLoad = true;
-                    this._ima3.request.setAdWillAutoPlay(true);
-                    this._ima3.request.setAdWillPlayMuted(true);
+                if (this._autoplay) {
+                    this._tryAutoPlay();
+                } else {
                     this._ima3.loader.requestAds(this._ima3.request);
-                  } else {
-                    this.play();
-                  }
+                }
+            }
+        }
+
+        _resError(name) {
+            if (name === 'hls') {
+                throw new Error('HLS not supported and error while loading library.');
+            } else if (name === 'ima3') {
+                this._ima3 = false;
+                this._ads = false;
+                this._tryAutoPlay();
+            }
+        }
+
+        _onAdError(adErrorEvent) {
+            console.log(adErrorEvent.getError());
+            this._ima3.manager.destroy();
+            this._ima3 = false;
+            this._ads = false;
+            this._dom.ad.style.display = 'none';
+
+            if (adErrorEvent.getError().getType() === google.ima.AdError.Type.AD_PLAY) {
+                this.play();
+            } else if (adErrorEvent.getError().getType() === google.ima.AdError.Type.AD_LOAD) {
+                this._tryAutoPlay();
+            }
+        }
+
+        _onAdContentPauseRequested() {
+            this._dom.video.pause();
+
+            this._dom.ad.style.display = 'block';
+        }
+
+        _onAdContentResumeRequested(e) {
+            if (this.ended) {
+                this.currentTime = 0;
+            } else {
+                this._dom.video.play();
+                this._updateControls('volume');
+            }
+
+            this._dom.ad.style.display = 'none';
+        }
+
+        _onAdEvent(adEvent) {
+            // Retrieve the ad from the event. Some events (e.g. ALL_ADS_COMPLETED)
+            // don't have ad object associated.
+            var ad = adEvent.getAd();
+            switch (adEvent.type) {
+                case google.ima.AdEvent.Type.LOADED:
+                    // This is the first event sent for an ad - it is possible to
+                    // determine whether the ad is a video ad or an overlay.
+                    if (!ad.isLinear()) {
+                        // Position AdDisplayContainer correctly for overlay.
+                        // Use ad.width and ad.height.
+                        this._dom.video.play();
+                    } else {
+                        this._ima3.manager.setVolume(this.muted ? 0 : this.volume);
+                    }
+                    break;
+                case google.ima.AdEvent.Type.STARTED:
+                    // This event indicates the ad has started - the video player
+                    // can adjust the UI, for example display a pause button and
+                    // remaining time.
+                    if (ad.isLinear()) {
+
+                        // For a linear ad, a timer can be started to poll for
+                        // the remaining time.
+                        this._ima3.intervalTimer = setInterval(
+                            function() {
+                                var remainingTime = this._ima3.manager.getRemainingTime();
+                                // @todo show it
+                            }.bind(this),
+                            300); // every 300ms
+                        this._ima3.playing = true;
+                    }
+                    break;
+                case google.ima.AdEvent.Type.COMPLETE:
+                    // This event indicates the ad has finished - the video player
+                    // can perform appropriate UI actions, such as removing the timer for
+                    // remaining time detection.
+                    if (ad.isLinear()) {
+                        clearInterval(this._ima3.intervalTimer);
+                        this._ima3.playing = false;
+                    }
+                    break;
+            }
+        }
+
+        _tryAutoPlay() {
+            if (!this._autoplay ||
+                !this._canPlay ||
+                (this._ads && !this._ima3)
+            ) {
+                return;
+            }
+            // Everything is setup and autoplay was requested, try it
+            this._autoplay = false; // to be sure to come only once here
+
+            this._dom.video.play()
+                .then(function() {
+                    // Play on current state
+
+                    this._dom.video.pause();
+                    this._dom.video.currentTime = 0;
+                    if (this._ima3) {
+                        this._autplayOnAdLoad = true;
+                        this._ima3.request.setAdWillAutoPlay(true);
+                        this._ima3.request.setAdWillPlayMuted(this.muted);
+                        this._ima3.loader.requestAds(this._ima3.request);
+                    } else {
+                        this.play();
+                    }
                 }.bind(this))
                 .catch(function() {
+                    // Autoplay did not work, try as muted if not set
+                    if (!this.muted) {
+                        this.volume = 0;
+                        this.muted = true;
+                        this._dom.video.play()
+                            .then(function() {
+                                // autoplay work as muted
+                                this._dom.video.pause();
+                                this._dom.video.currentTime = 0;
 
+                                if (this._ima3) {
+                                    this._autplayOnAdLoad = true;
+                                    this._ima3.request.setAdWillAutoPlay(true);
+                                    this._ima3.request.setAdWillPlayMuted(true);
+                                    this._ima3.loader.requestAds(this._ima3.request);
+                                } else {
+                                    this.play();
+                                }
+                            }.bind(this))
+                            .catch(function() {
+
+                            }.bind(this));
+                    }
+                }.bind(this));
+
+        }
+        play() {
+            if (this._ima3) {
+                if (this._ima3.playing) {
+                    this._ima3.manager.resume();
+                } else if (this._ima3.inited) {
+                    this._dom.video.play();
+                } else {
+                    try {
+                        this._ima3.container.initialize();
+                        this._ima3.manager.init(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.NORMAL);
+                        this._ima3.manager.start();
+                        this._ima3.inited = true;
+                    } catch (adError) {
+                        this._dom.video.play();
+                    }
+                }
+            } else {
+                this._dom.video.play();
+            }
+        }
+
+        pause() {
+            this._dom.video.pause();
+            if (this._ima3 && this._ima3.manager) {
+                this._ima3.manager.pause();
+            }
+        }
+
+        toggle() {
+            if (this.paused) {
+                this.play();
+            } else {
+                this.pause();
+            }
+        }
+
+        fullscreen() {
+            if (this._fullscreened || !canFullScreen) {
+                return;
+            }
+
+            this._previousFullscreened = {
+                width: this.style.width,
+                height: this.style.height
+            };
+            this.style.width = '100%';
+            this.style.height = '100%';
+
+            this._fullscreened = makeFullScreen(this);
+
+            this._resizeIma3();
+        }
+
+        exitFullscreen() {
+            if (!this._fullscreened) {
+                return;
+            }
+
+            this._fullscreened = makeFullScreen(this);
+
+            this.style.width = this._previousFullscreened.width;
+            this.style.height = this._previousFullscreened.height;
+            delete(this._previousFullscreened);
+            this._resizeIma3();
+        }
+
+        _resizeIma3() {
+            if (this._ima3 && this._ima3.manager) {
+                requestAnimationFrame(function() {
+                    this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, this._fullscreened ? google.ima.ViewMode.FULLSCREEN : google.ima.ViewMode.NORMAL);
+                    if (isTouch && this._fullscreened) {
+                        // In some case, when nav bar disappear, we have to wait a little bit more
+                        setTimeout(function() {
+                            this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.FULLSCREEN);
+                        }.bind(this), 100);
+                    }
                 }.bind(this));
             }
-          }.bind(this));
+        }
 
-      }
-      play() {
-        if (this._ima3) {
-            if (this._ima3.playing) {
-              this._ima3.manager.resume();
-            } else if (this._ima3.inited) {
-              this._dom.video.play();
+        get src() {
+            return this._src;
+        }
+        get ads() {
+            return this._ads;
+        }
+
+        set currentTime(currentTime) {
+            this._dom.video.currentTime = currentTime;
+        }
+        get currentTime() {
+            return this._dom.video.currentTime;
+        }
+
+        get duration() {
+            return this._dom.video.duration;
+        }
+
+        get buffered() {
+            return this._dom.video.buffered;
+        }
+
+        set muted(muted) {
+            this._dom.video.muted = muted;
+            if (muted) {
+                this._dom.video.setAttribute('muted', '');
             } else {
-              try {
-                this._ima3.container.initialize();
-                this._ima3.manager.init(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.NORMAL);
-                this._ima3.manager.start();
-                this._ima3.inited = true;
-              } catch (adError) {
-                this._dom.video.play();
-              }
+                this._dom.video.removeAttribute('muted');
             }
-        } else {
-          this._dom.video.play();
-        }
-      }
 
-      pause() {
-        this._dom.video.pause();
-        if (this._ima3 && this._ima3.manager) {
-          this._ima3.manager.pause();
-        }
-      }
-
-      toggle() {
-        if (this.paused) {
-          this.play();
-        } else {
-          this.pause();
-        }
-      }
-
-      fullscreen() {
-        if (this._fullscreened || !canFullScreen) {
-          return;
-        }
-
-        this._previousFullscreened = {
-          width: this.style.width,
-          height: this.style.height
-        };
-        this.style.width = '100%';
-        this.style.height = '100%';
-
-        this._fullscreened = makeFullScreen(this);
-
-        this._resizeIma3();
-      }
-
-      exitFullscreen() {
-        if (!this._fullscreened) {
-          return;
-        }
-
-        this._fullscreened = makeFullScreen(this);
-
-        this.style.width = this._previousFullscreened.width;
-        this.style.height = this._previousFullscreened.height;
-        delete(this._previousFullscreened);
-        this._resizeIma3();
-      }
-
-      _resizeIma3() {
-        if (this._ima3 && this._ima3.manager) {
-          requestAnimationFrame(function() {
-            this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, this._fullscreened ? google.ima.ViewMode.FULLSCREEN : google.ima.ViewMode.NORMAL);
-            if (isTouch && this._fullscreened) {
-              // In some case, when nav bar disappear, we have to wait a little bit more
-              setTimeout(function() {
-                this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.FULLSCREEN);
-              }.bind(this), 100);
+            if (this._ima3 && this._ima3.manager) {
+                this._ima3.manager.setVolume(muted ? 0 : this._dom.video.volume);
             }
-          }.bind(this));
         }
-      }
-
-      get src() {
-        return this._src;
-      }
-      get ads() {
-        return this._ads;
-      }
-
-      set currentTime(currentTime) {
-        this._dom.video.currentTime = currentTime;
-      }
-      get currentTime() {
-        return this._dom.video.currentTime;
-      }
-
-      get duration() {
-        return this._dom.video.duration;
-      }
-
-      get buffered() {
-        return this._dom.video.buffered;
-      }
-
-      set muted(muted) {
-        this._dom.video.muted = muted;
-        if (muted) {
-          this._dom.video.setAttribute('muted', '');
-        } else {
-          this._dom.video.removeAttribute('muted');
+        get muted() {
+            return this._dom.video.muted;
         }
 
-        if (this._ima3 && this._ima3.manager) {
-            this._ima3.manager.setVolume(muted ? 0 : this._dom.video.volume);
+        get paused() {
+            return this._dom.video.paused && (!this._ima3 || !this._ima3.playing);
         }
-      }
-      get muted() {
-        return this._dom.video.muted;
-      }
 
-      get paused() {
-        return this._dom.video.paused && (!this._ima3 || !this._ima3.playing);
-      }
-
-      get playingAd() {
-        return this._ima3 && this._ima3.playing;
-      }
-
-      get ended() {
-        return this._dom.video.ended;
-      }
-
-      set volume(volume) {
-        volume = parseFloat(volume);
-        if (volume === 0) {
-          this.muted = true;
-        } else {
-          this._dom.video.volume = volume;
-
-          if (this._ima3 && this._ima3.manager) {
-            this._ima3.manager.setVolume(volume);
-          }
-          this.muted = false;
+        get playingAd() {
+            return this._ima3 && this._ima3.playing;
         }
-      }
 
-      get volume() {
-        return this._dom.video.volume;
-      }
+        get ended() {
+            return this._dom.video.ended;
+        }
+
+        set volume(volume) {
+            volume = parseFloat(volume);
+            if (volume === 0) {
+                this.muted = true;
+            } else {
+                this._dom.video.volume = volume;
+
+                if (this._ima3 && this._ima3.manager) {
+                    this._ima3.manager.setVolume(volume);
+                }
+                this.muted = false;
+            }
+        }
+
+        get volume() {
+            return this._dom.video.volume;
+        }
     }
 
     window.customElements.define('nyro-video', NyroVideo);
