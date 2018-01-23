@@ -430,6 +430,11 @@
         },
         resizeRaf;
 
+    document.addEventListener('keydown', function(e) {
+        if (document.activeElement && document.activeElement.nodeName.toLowerCase() === 'nyro-video') {
+            document.activeElement._keyDown(e);
+        }
+    });
     window.addEventListener('resize', function() {
         if (resizeRaf) {
             cancelAnimationFrame(resizeRaf);
@@ -485,6 +490,10 @@
                 throw new Error('no src attribute found');
             }
 
+            if (!this.hasAttribute('tabindex')) {
+                this.setAttribute('tabindex', -1);
+            }
+
             if (this.hasAttribute('muted')) {
                 this.volume = 0;
                 this.muted = true;
@@ -499,12 +508,12 @@
             this._ads = this.getAttribute('ads');
 
             if (this._ads) {
-              this.appendChild(this._dom.clone);
+                this.appendChild(this._dom.clone);
             } else {
-              this._shadow = this.attachShadow({
-                  mode: 'open'
-              });
-              this._shadow.appendChild(this._dom.clone);
+                this._shadow = this.attachShadow({
+                    mode: 'open'
+                });
+                this._shadow.appendChild(this._dom.clone);
             }
 
             if (this.hasAttribute('controls')) {
@@ -722,12 +731,14 @@
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.play();
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
                 this._dom.subConstrols.playPause_pause.forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.pause();
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
             }
@@ -743,12 +754,14 @@
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.muted = true;
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
                 this._dom.subConstrols.volume_unmute.forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.muted = false;
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
 
@@ -820,12 +833,14 @@
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.fullscreen();
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
                 this._dom.subConstrols.fullscreen_exit.forEach(function(el) {
                     el.addEventListener('click', function(e) {
                         e.preventDefault();
                         this.exitFullscreen();
+                        this.focus();
                     }.bind(this));
                 }.bind(this));
             }
@@ -883,8 +898,11 @@
             }
         }
 
-        _updateControls(type) {
+        _updateControls(type, clb) {
             if (!this._dom.controls || !this._dom.subConstrols) {
+                if (clb) {
+                    clb();
+                }
                 return;
             }
             switch (type) {
@@ -959,6 +977,10 @@
                     }
                     break;
             }
+
+            if (clb) {
+                clb();
+            }
         }
 
         _resLoaded(name) {
@@ -986,6 +1008,7 @@
 
                             this._dom.subConstrols.quality_buttons.forEach(function(el) {
                                 el.addEventListener('click', function(e) {
+                                    this.focus();
                                     if (!this._hls) {
                                         return;
                                     }
@@ -1306,6 +1329,7 @@
 
             this._fullscreened = makeFullScreen(this);
 
+            this.focus();
             this._resizeIma3();
         }
 
@@ -1320,6 +1344,70 @@
             this.style.height = this._previousFullscreened.height;
             delete(this._previousFullscreened);
             this._resizeIma3();
+        }
+
+        _keyDown(e) {
+            e = e || window.event;
+
+            switch (e.keyCode) {
+                case 37:
+                    e.preventDefault();
+                    var currentTime = this.currentTime;
+                    currentTime -= 5;
+                    this.currentTime = Math.max(0, currentTime);
+                    this._forcedCurentTime = this.currentTime;
+                    this._updateControls('time', function() {
+                        this._forcedCurentTime = false;
+                    }.bind(this));
+                    this._showUiTimer();
+                    return;
+                case 39:
+                    e.preventDefault();
+                    var currentTime = this.currentTime;
+                    currentTime += 5;
+                    this.currentTime = Math.min(this.duration, currentTime);
+                    this._forcedCurentTime = this.currentTime;
+                    this._updateControls('time', function() {
+                        this._forcedCurentTime = false;
+                    }.bind(this));
+                    this._showUiTimer();
+                    return;
+                case 38:
+                    e.preventDefault();
+                    var volume = this.volume;
+                    volume += 0.05;
+                    this.volume = Math.min(1, volume);
+                    this._showUiTimer();
+                    return;
+                case 40:
+                    e.preventDefault();
+                    var volume = this.volume;
+                    volume -= 0.05;
+                    this.volume = Math.max(0, volume);
+                    this._showUiTimer();
+                    return;
+            }
+
+
+            switch (e.key) {
+                case ' ':
+                    e.preventDefault();
+                    this.toggle();
+                    break;
+                case 'f':
+                    e.preventDefault();
+                    if (this._fullscreened) {
+                        this.exitFullscreen();
+                    } else {
+                        this.fullscreen();
+                    }
+                    break;
+                case 'm':
+                    e.preventDefault();
+                    this.muted = !this.muted;
+                    this._showUiTimer();
+                    break;
+            }
         }
 
         _resizeIma3() {
