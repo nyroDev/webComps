@@ -449,18 +449,16 @@
 
         constructor() {
             super();
-            this._shadow = this.attachShadow({
-                mode: 'open'
-            });
-            this._shadow.appendChild(document.importNode(template.content, true));
+
+            let clone = document.importNode(template.content, true);
 
             this._dom = {
-                me: this._shadow,
-                global: this._shadow.querySelector('.nyroVideo'),
-                content: this._shadow.querySelector('.nyroVideoContent'),
-                seeking: this._shadow.querySelector('.nyroVideoSeeking'),
-                video: this._shadow.querySelector('video'),
-                ad: this._shadow.querySelector('.nyroVideoAd')
+                clone: clone,
+                global: clone.querySelector('.nyroVideo'),
+                content: clone.querySelector('.nyroVideoContent'),
+                seeking: clone.querySelector('.nyroVideoSeeking'),
+                video: clone.querySelector('video'),
+                ad: clone.querySelector('.nyroVideoAd')
             };
 
             videoEvts.forEach(function(evt) {
@@ -498,6 +496,17 @@
                 this._dom.video.setAttribute('playsinline', '');
             }
 
+            this._ads = this.getAttribute('ads');
+
+            if (this._ads) {
+              this.appendChild(this._dom.clone);
+            } else {
+              this._shadow = this.attachShadow({
+                  mode: 'open'
+              });
+              this._shadow.appendChild(this._dom.clone);
+            }
+
             if (this.hasAttribute('controls')) {
                 this._initControls(this.getAttribute('controls'));
             }
@@ -509,7 +518,6 @@
                 this._dom.video.setAttribute('src', this._src);
             }
 
-            this._ads = this.getAttribute('ads');
             if (this._ads) {
                 loadScript('ima3', this._resLoaded.bind(this), this._resError.bind(this));
             }
@@ -619,7 +627,7 @@
             }
 
             this._dom.video.insertAdjacentHTML('afterend', html);
-            this._dom.controls = this._dom.me.querySelector('.nyroVideoControls');
+            this._dom.controls = this._dom.global.querySelector('.nyroVideoControls');
             this._dom.subConstrols = {};
 
             if (isTouch) {
