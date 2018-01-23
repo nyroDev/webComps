@@ -112,13 +112,13 @@
   width: 0 !important;
 }
 
-.nyroVideoExitFullscreen, .fullscreened .nyroVideoEnterFullscreen {
+.nyroVideoExitFullscreen, :host(.fullscreened) .nyroVideoEnterFullscreen {
   display: none;
 }
-.fullscreened .nyroVideoExitFullscreen {
+:host(.fullscreened) .nyroVideoExitFullscreen {
   display: block;
 }
-.fullscreened .nyroVideo {
+:host(.fullscreened) .nyroVideo {
   height: 100% !important;
   padding-top: 0 !important;
 }
