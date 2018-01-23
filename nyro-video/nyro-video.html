@@ -396,24 +396,49 @@
         });
     }, evtPassivePrm);
 
+    if (window.ShadyCSS) {
+        window.ShadyCSS.prepareTemplate(template, 'nyro-video');
+    }
+
     window.NyroVideo = class extends HTMLElement {
 
+      constructor() {
+        super();
+		this._shadow = this.attachShadow({mode: 'open'});
+		this._shadow.appendChild(document.importNode(template.content, true));
+
+        this._dom = {
+          me: this._shadow,
+          global: this._shadow.querySelector('.nyroVideo'),
+          content: this._shadow.querySelector('.nyroVideoContent'),
+          seeking: this._shadow.querySelector('.nyroVideoSeeking'),
+          video: this._shadow.querySelector('video'),
+          ad: this._shadow.querySelector('.nyroVideoAd')
+        };
+
+        videoEvts.forEach(function(evt) {
+          this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
+        }.bind(this));
+
+        if (!isTouch) {
+          this.addEventListener('mouseleave', function() {
+            if (!this.paused) {
+              this._dom.content.classList.add('hideUi');
+            }
+          }.bind(this), evtPassivePrm);
+          this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
+          this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
+        }
+      }
+
       connectedCallback() {
+          if (window.ShadyCSS) {
+              window.ShadyCSS.styleElement(this);
+          }
         this._src = this.getAttribute('src');
         if (!this._src) {
           throw new Error('no src attribute found');
         }
-
-        const clone = document.importNode(template.content, true);
-
-        this._dom = {
-          me: clone,
-          global: clone.querySelector('.nyroVideo'),
-          content: clone.querySelector('.nyroVideoContent'),
-          seeking: clone.querySelector('.nyroVideoSeeking'),
-          video: clone.querySelector('video'),
-          ad: clone.querySelector('.nyroVideoAd')
-        };
 
         if (this.hasAttribute('muted')) {
           this.volume = 0;
@@ -426,25 +451,9 @@
           this._dom.video.setAttribute('playsinline', '');
         }
 
-        videoEvts.forEach(function(evt) {
-          this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
-        }.bind(this));
-
         if (this.hasAttribute('controls')) {
           this._initControls(this.getAttribute('controls'));
         }
-
-        if (!isTouch) {
-          this.addEventListener('mouseleave', function() {
-            if (!this.paused) {
-              this._dom.content.classList.add('hideUi');
-            }
-          }.bind(this), evtPassivePrm);
-          this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
-          this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
-        }
-
-        this.appendChild(clone);
 
         this._canPlay = false;
         if (this._src.endsWith('.m3u8') && !canPlayNativeHls) {
