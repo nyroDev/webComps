@@ -98,7 +98,6 @@
     border-radius: 50%;
     background-color: #fff;
     opacity: 0.6;
-
     -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
     animation: sk-bounce 2.0s infinite ease-in-out;
 }
@@ -106,23 +105,19 @@
     -webkit-animation-delay: -1.0s;
     animation-delay: -1.0s;
 }
-
 @-webkit-keyframes sk-bounce {
-  0%, 100% { -webkit-transform: scale(0.0) }
-  50% { -webkit-transform: scale(1.0) }
+    0%, 100% { -webkit-transform: scale(0.0) }
+    50% { -webkit-transform: scale(1.0) }
 }
-
 @keyframes sk-bounce {
-  0%, 100% {
-    transform: scale(0.0);
-    -webkit-transform: scale(0.0);
-  } 50% {
-    transform: scale(1.0);
-    -webkit-transform: scale(1.0);
-  }
+    0%, 100% {
+        transform: scale(0.0);
+        -webkit-transform: scale(0.0);
+    } 50% {
+        transform: scale(1.0);
+        -webkit-transform: scale(1.0);
+    }
 }
-
-
 .nyroVideoControls {
     position: absolute;
     bottom: 0;
@@ -251,6 +246,25 @@ button:hover .nyroVideoIcon {
     left: 0;
     bottom: 0;
     background: #fff;
+}
+.nyroVideoProgress .nyroVideoProgressRead:after, .nyroVideoVolumeCursor:after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: -3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: red;
+    transform: scale(0, 0);
+    transition: transform 300ms;
+}
+.nyroVideoVolumeCursor:after {
+    background: #fff;
+}
+.nyroVideoProgress:hover .nyroVideoProgressRead:after,
+.nyroVideoVolume:hover .nyroVideoVolumeCursor:after {
+    transform: scale(1, 1);
 }
 .nyroVideoCurrentTime, .nyroVideoRemainingTime {
     padding: 0 5px 0 10px;
