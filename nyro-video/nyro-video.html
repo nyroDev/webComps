@@ -24,7 +24,13 @@
 </svg>
 
 <style>
-:host, nyro-video {
+:host {
+    outline: none;
+    --normal-color: #fff;
+    --progress-color: red;
+    --bar-background-color: rgba(255, 255, 255, 0.3);
+}
+nyro-video {
     outline: none;
     --normal-color: #fff;
     --progress-color: red;
@@ -211,17 +217,33 @@ button:hover .nyroVideoIcon {
 .volume-low .nyroVideoIcon-volume-down {
     display: inline;
 }
-.nyroVideoExitFullscreen, :host(.fullscreened) .nyroVideoEnterFullscreen, .fullscreened .nyroVideoEnterFullscreen {
+:host(.fullscreened) .nyroVideoEnterFullscreen {
     display: none;
 }
-:host(.fullscreened) .nyroVideoExitFullscreen, .fullscreened .nyroVideoExitFullscreen {
+.nyroVideoExitFullscreen, .fullscreened .nyroVideoEnterFullscreen {
+    display: none;
+}
+:host(.fullscreened) .nyroVideoExitFullscreen {
     display: block;
 }
-:host(.fullscreened) .nyroVideo, .fullscreened .nyroVideo {
+.fullscreened .nyroVideoExitFullscreen {
+    display: block;
+}
+:host(.fullscreened) .nyroVideo {
     height: 100% !important;
     padding-top: 0 !important;
 }
-:host(.fullscreened), nyro-video.fullscreened {
+.fullscreened .nyroVideo {
+    height: 100% !important;
+    padding-top: 0 !important;
+}
+:host(.fullscreened) {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
+nyro-video.fullscreened {
     width: 100% !important;
     height: 100% !important;
     max-width: 100% !important;
