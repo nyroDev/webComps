@@ -26,6 +26,9 @@
 <style class="insertOnce">
 :host, nyro-video {
     outline: none;
+    --normal-color: #fff;
+    --progress-color: red;
+    --bar-background-color: rgba(255, 255, 255, 0.3);
 }
 .nyroVideo {
     position: relative;
@@ -62,7 +65,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    color: #fff;
+    color: var(--normal-color);
     justify-content: center;
     align-items: center;
     background: rgba(0, 0, 0, 0.5);
@@ -126,7 +129,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    color: #fff;
+    color: var(--normal-color);
     background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%);
     background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%);
     background: linear-gradient(to bottom, rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%);
@@ -149,7 +152,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--bar-background-color);
 }
 .nyroVideoProgress div {
     position: absolute;
@@ -158,22 +161,22 @@
     bottom: 0;
 }
 .nyroVideoProgress .nyroVideoProgressLoad {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--bar-background-color);
 }
 .nyroVideoProgress .nyroVideoProgressRead {
-    background: red;
+    background: var(--progress-color);
 }
 .nyroVideoControls button {
     height: 30px;
     padding: 2px 10px;
     background: transparent;
-    color: #fff;
+    color: var(--normal-color);
     border: none;
     cursor: pointer;
 }
 .nyroVideoIcon {
-    stroke: #fff;
-    fill: #fff;
+    stroke: var(--normal-color);
+    fill: var(--normal-color);
     height: 22px;
     width: 22px;
     opacity: 0.8;
@@ -232,7 +235,7 @@ button:hover .nyroVideoIcon {
     position: relative;
     height: 4px;
     width: 50px;
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--bar-background-color);
     cursor: pointer;
     max-width: 0;
     transition: max-width 300ms;
@@ -245,7 +248,7 @@ button:hover .nyroVideoIcon {
     top: 0;
     left: 0;
     bottom: 0;
-    background: #fff;
+    background: var(--normal-color);
 }
 .nyroVideoProgress .nyroVideoProgressRead:after, .nyroVideoVolumeCursor:after {
     content: '';
@@ -255,12 +258,12 @@ button:hover .nyroVideoIcon {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: red;
+    background: var(--progress-color);
     transform: scale(0, 0);
     transition: transform 300ms;
 }
 .nyroVideoVolumeCursor:after {
-    background: #fff;
+    background: var(--normal-color);
 }
 .nyroVideoProgress:hover .nyroVideoProgressRead:after,
 .nyroVideoVolume:hover .nyroVideoVolumeCursor:after {
@@ -323,7 +326,7 @@ button:hover .nyroVideoIcon {
     background: rgba(0, 0, 0, 0.3);
 }
 .nyroVideoQuality button:hover, .nyroVideoQuality .selected {
-    color: red;
+    color: var(--progress-color);
 }
 .nyroVideoTimeDiviser:after {
     content: ' / ';
@@ -339,7 +342,7 @@ button:hover .nyroVideoIcon {
 .nyroVideoAdVolume button {
     line-height: 30px;
     background: rgba(0, 0, 0, 0.8);
-    color: #fff;
+    color: var(--normal-color);;
     border: none;
     cursor: pointer;
 }
