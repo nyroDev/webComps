@@ -598,7 +598,7 @@ button:hover .nyroVideoIcon {
         });
     }, evtPassivePrm);
 
-    if (window.ShadyCSS) {
+    if (false && window.ShadyCSS) {
         window.ShadyCSS.prepareTemplate(template, 'nyro-video');
         window.ShadyCSS.prepareTemplate(templateOnce, 'nyro-video');
     }
@@ -630,7 +630,7 @@ button:hover .nyroVideoIcon {
                 this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
             }
 
-            if (window.ShadyCSS) {
+            if (false && window.ShadyCSS) {
                 window.ShadyCSS.styleElement(this);
             }
             this._src = this.getAttribute('src');
@@ -655,8 +655,9 @@ button:hover .nyroVideoIcon {
 
             this._ads = this.getAttribute('ads');
 
-            if (this._ads) {
+            if (true || this._ads) {
                 // Ads is not supported in shadow DOM, add insertOnce element
+                // Always use Shadow DOM because of ads bug and Sfaris SVG bug
                 if (!templateFullyInserted) {
                   headDom.insertBefore(document.importNode(templateOnce.content, true), headDom.firstChild);
                   templateFullyInserted = true;
