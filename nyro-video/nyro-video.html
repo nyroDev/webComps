@@ -442,7 +442,7 @@ nyro-video.fullscreened {
         headDom.appendChild(script);
     };
 
-    const canPlayNativeHls = false && !!document.createElement('video').canPlayType('application/vnd.apple.mpegURL');
+    const canPlayNativeHls = !!document.createElement('video').canPlayType('application/vnd.apple.mpegURL');
 
     const currentScript = document.currentScript,
         template = currentScript.previousElementSibling,
@@ -698,7 +698,7 @@ nyro-video.fullscreened {
             }
 
             this._canPlay = false;
-            if (this._src.endsWith('.m3u8') && !canPlayNativeHls) {
+            if (this._src.endsWith('.m3u8')) {
                 loadScript('hls', this._resLoaded.bind(this), this._resError.bind(this));
             } else {
                 this._dom.video.setAttribute('src', this._src);
@@ -1241,6 +1241,8 @@ nyro-video.fullscreened {
 
                     this._tryAutoPlay();
 
+                } else if (canPlayNativeHls) {
+                    this._dom.video.src = this._src;
                 } else {
                     throw new Error('Impossible to read '.this._src);
                 }
