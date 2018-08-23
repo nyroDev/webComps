@@ -21,6 +21,9 @@
     <symbol id="nyroVideoIcon-volume-up" viewBox="0 0 576 512">
         <path d="M256 88.017v335.964c0 21.438-25.943 31.998-40.971 16.971L126.059 352H24c-13.255 0-24-10.745-24-24V184c0-13.255 10.745-24 24-24h102.059l88.971-88.954c15.01-15.01 40.97-4.49 40.97 16.971zm182.056-77.876C422.982.92 403.283 5.668 394.061 20.745c-9.221 15.077-4.473 34.774 10.604 43.995C468.967 104.063 512 174.983 512 256c0 73.431-36.077 142.292-96.507 184.206-14.522 10.072-18.129 30.01-8.057 44.532 10.076 14.528 30.016 18.126 44.531 8.057C529.633 438.927 576 350.406 576 256c0-103.244-54.579-194.877-137.944-245.859zM480 256c0-68.547-36.15-129.777-91.957-163.901-15.076-9.22-34.774-4.471-43.994 10.607-9.22 15.078-4.471 34.774 10.607 43.994C393.067 170.188 416 211.048 416 256c0 41.964-20.62 81.319-55.158 105.276-14.521 10.073-18.128 30.01-8.056 44.532 6.216 8.96 16.185 13.765 26.322 13.765a31.862 31.862 0 0 0 18.21-5.709C449.091 377.953 480 318.938 480 256zm-96 0c0-33.717-17.186-64.35-45.972-81.944-15.079-9.214-34.775-4.463-43.992 10.616s-4.464 34.775 10.615 43.992C314.263 234.538 320 244.757 320 256a32.056 32.056 0 0 1-13.802 26.332c-14.524 10.069-18.136 30.006-8.067 44.53 10.07 14.525 30.008 18.136 44.53 8.067C368.546 316.983 384 287.478 384 256z"></path>
     </symbol>
+    <symbol id="nyroVideoIcon-download" viewBox="0 0 512 512">
+        <path d="m358.40002,230.4l-102.40001,102.40001l-102.40001,-102.40001l64,0l0,-153.60001l76.8,0l0,153.60001l64,0zm-102.40001,102.40001l-192.00001,0l0,102.40001l384.00002,0l0,-102.40001l-192.00001,0zm166.40001,51.2l-51.2,0l0,-25.6l51.2,0l0,25.6z"></path>
+    </symbol>
 </svg>
 
 <style>
@@ -628,7 +631,6 @@ nyro-video.fullscreened {
     window.NyroVideo = class extends HTMLElement {
 
         connectedCallback() {
-
             let clone = document.importNode(template.content, true);
 
             this._dom = {
@@ -655,9 +657,15 @@ nyro-video.fullscreened {
             if (false && window.ShadyCSS) {
                 window.ShadyCSS.styleElement(this);
             }
+
+            const poster = this.getAttribute('poster');
+            if (poster) {
+                this._dom.video.setAttribute('poster', poster);
+            }
+
             this._src = this.getAttribute('src');
             if (!this._src) {
-                throw new Error('no src attribute found');
+                console.warn('no src attribute found');
             }
 
             if (!this.hasAttribute('tabindex')) {
@@ -681,8 +689,8 @@ nyro-video.fullscreened {
                 // Ads is not supported in shadow DOM, add insertOnce element
                 // Always use Shadow DOM because of ads bug and Sfaris SVG bug
                 if (!templateFullyInserted) {
-                  headDom.insertBefore(document.importNode(templateOnce.content, true), headDom.firstChild);
-                  templateFullyInserted = true;
+                    headDom.insertBefore(document.importNode(templateOnce.content, true), headDom.firstChild);
+                    templateFullyInserted = true;
                 }
                 this.appendChild(clone);
             } else {
@@ -698,11 +706,7 @@ nyro-video.fullscreened {
             }
 
             this._canPlay = false;
-            if (this._src.endsWith('.m3u8')) {
-                loadScript('hls', this._resLoaded.bind(this), this._resError.bind(this));
-            } else {
-                this._dom.video.setAttribute('src', this._src);
-            }
+            this._setSrc();
 
             if (this._ads) {
                 loadScript('ima3', this._resLoaded.bind(this), this._resError.bind(this));
@@ -711,10 +715,41 @@ nyro-video.fullscreened {
             this._tryAutoPlay();
         }
 
+        static get observedAttributes() {
+            return [
+                'src',
+                'poster'
+            ];
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            if (name === 'src') {
+                this._src = newValue;
+                this._setSrc(true);
+            } else if (name === 'poster') {
+                this._dom.video.setAttribute('poster', newValue);
+            }
+        }
+
+        _setSrc(tryAutoplay) {
+            if (this._src) {
+                if (this._src.endsWith('.m3u8')) {
+                    loadScript('hls', this._resLoaded.bind(this), this._resError.bind(this));
+                } else {
+                    this._dom.video.setAttribute('src', this._src);
+                }
+
+                if (tryAutoplay) {
+                    this._tryAutoPlay();
+                }
+            }
+        }
+
         _showUiTimer() {
             this._dom.content.classList.remove('hideUi');
             this._hideUiTimer();
         }
+
         _hideUiTimer() {
             if (this._uiTimer) {
                 clearTimeout(this._uiTimer);
@@ -738,6 +773,7 @@ nyro-video.fullscreened {
                 'duration',
                 'quality',
                 'fullscreen',
+                'download',
                 'spacer'
             ];
             if (controls) {
@@ -797,6 +833,9 @@ nyro-video.fullscreened {
                         if (canFullScreen) {
                             html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">'+svgIcon('fullscreen')+'</button><button class="nyroVideoExitFullscreen">'+svgIcon('exitFullscreen')+'</button></div>';
                         }
+                        break;
+                    case 'download':
+                        html += '<div class="nyroVideoDownload"><button class="nyroVideoDownloadBut">'+svgIcon('download')+'</button></div>';
                         break;
                     case 'spacer':
                         html += '<div class="nyroVideoSpacer"></div>';
@@ -1020,6 +1059,30 @@ nyro-video.fullscreened {
                         this.focus();
                     }.bind(this));
                 }.bind(this));
+            }
+
+            if (controls.indexOf('download') !== -1) {
+                this._dom.subConstrols.downloadBut = this._dom.global.querySelectorAll('.nyroVideoDownloadBut');
+
+                if (this._dom.subConstrols.downloadBut && this._dom.subConstrols.downloadBut.length) {
+                    this._dom.subConstrols.downloadBut.forEach(function(el) {
+                        el.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (this._src) {
+                                const a = document.createElement('A');
+                                a.href = this._src;
+                                a.download = this._src.substr(this._src.lastIndexOf('/') + 1);
+                                const posQuestion = a.download.lastIndexOf('?');
+                                if (posQuestion > 0) {
+                                    a.download = a.download.substr(0, posQuestion);
+                                }
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            }
+                        }.bind(this));
+                    }.bind(this));
+                }
             }
         }
 
@@ -1414,6 +1477,7 @@ nyro-video.fullscreened {
         _tryAutoPlay() {
             if (!this._autoplay ||
                 !this._canPlay ||
+                !this._src ||
                 (this._ads && !this._ima3)
             ) {
                 return;
