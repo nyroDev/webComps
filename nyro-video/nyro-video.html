@@ -631,6 +631,8 @@ nyro-video.fullscreened {
     window.NyroVideo = class extends HTMLElement {
 
         connectedCallback() {
+            this._bubbleEvents = false;
+
             let clone = document.importNode(template.content, true);
 
             this._dom = {
@@ -723,6 +725,9 @@ nyro-video.fullscreened {
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
+            if (!this._dom || !this._dom.video) {
+                return;
+            }
             if (name === 'src') {
                 this._src = newValue;
                 this._setSrc(true);
@@ -1136,6 +1141,14 @@ nyro-video.fullscreened {
                     }
                     break;
             }
+
+            if (this._bubbleEvents) {
+                this.dispatchEvent(new e.constructor(e.type, e));
+            }
+        }
+
+        set bubbleEvents(value) {
+            this._bubbleEvents = !!value;
         }
 
         _updateControls(type, clb) {
