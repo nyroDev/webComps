@@ -1,5 +1,5 @@
 const scriptUrls = {
-    hls: 'https://video-dev.github.io/hls.js/dist/hls.light.min.js',
+    hls: 'https://cdn.jsdelivr.net/npm/hls.js@latest',
     ima3: '//imasdk.googleapis.com/js/sdkloader/ima3.js'
 };
 const scriptCallbacks = {};
