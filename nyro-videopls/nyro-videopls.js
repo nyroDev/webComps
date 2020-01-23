@@ -65,8 +65,19 @@ window.NyroVideopls = class extends HTMLElement {
     addItem(item) {
         this._items.push(item);
 
-        if (this._autoplay && this._items.length === 1) {
-            this._playItem(item);
+        if (this._items.length === 1) {
+            if (this._autoplay) {
+                this._playItem(item);
+            } else {
+                // init first video to have a UI
+                this._setActiveItem(item);
+                item.video; // will trigger the init of the video
+                this.dispatchEvent(new CustomEvent('nyroVideoPlsActiveItem', {
+                    bubbles: true,
+                    cancelable: true,
+                    detail: item
+                }));
+            }
         }
     }
 
@@ -91,11 +102,6 @@ window.NyroVideopls = class extends HTMLElement {
         }
         item.classList.add('active');
         this._activeItem = item;
-        this.dispatchEvent(new CustomEvent('nyroVideoPlsActiveItem', {
-            bubbles: true,
-            cancelable: true,
-            detail: item
-        }));
     }
 
     _leaveItem(item) {
@@ -115,6 +121,11 @@ window.NyroVideopls = class extends HTMLElement {
                 item.video.fullscreen();
             }
         }
+        this.dispatchEvent(new CustomEvent('nyroVideoPlsActiveItem', {
+            bubbles: true,
+            cancelable: true,
+            detail: item
+        }));
     }
 
     get nbItems() {
@@ -262,6 +273,10 @@ window.NyroVideoplsitem = class extends HTMLElement {
 
         if (this._pls.hasAttribute('controls')) {
             this._video.setAttribute('controls', this._pls.getAttribute('controls'));
+        }
+
+        if (this._pls.hasAttribute('discard-aspect-ratio')) {
+            this._video.setAttribute('discard-aspect-ratio', '');
         }
 
         if (needPlay) {
