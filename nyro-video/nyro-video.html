@@ -12,6 +12,14 @@
     <symbol id="nyroVideoIcon-pause" viewBox="0 0 448 512">
         <path d="M144 479H48c-26.5 0-48-21.5-48-48V79c0-26.5 21.5-48 48-48h96c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48zm304-48V79c0-26.5-21.5-48-48-48h-96c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h96c26.5 0 48-21.5 48-48z"></path>
     </symbol>
+    <symbol id="nyroVideoIcon-next" viewBox="0 0 512 512">
+        <path d="m311.66561,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05914,-18.5 23.13258,-64.1 0,-82.6z"/>
+        <path d="m494.67809,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05915,-18.5 23.13258,-64.1 0,-82.6z"/>
+    </symbol>
+    <symbol id="nyroVideoIcon-prev" viewBox="0 0 512 512">
+        <path transform="rotate(-180 164.49375915527347,256)" d="m311.66561,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05914,-18.5 23.13258,-64.1 0,-82.6z"/>
+        <path transform="rotate(-180 347.5062561035156,256)" d="m494.67809,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05915,-18.5 23.13258,-64.1 0,-82.6z"/>
+    </symbol>
     <symbol id="nyroVideoIcon-volume-down" viewBox="0 0 576 512">
         <path d="M256 88.017v335.964c0 21.438-25.943 31.998-40.971 16.971L126.059 352H24c-13.255 0-24-10.745-24-24V184c0-13.255 10.745-24 24-24h102.059l88.971-88.954c15.01-15.01 40.97-4.49 40.97 16.971zM384 256c0-33.717-17.186-64.35-45.972-81.944-15.079-9.214-34.775-4.463-43.992 10.616s-4.464 34.775 10.615 43.992C314.263 234.538 320 244.757 320 256a32.056 32.056 0 0 1-13.802 26.332c-14.524 10.069-18.136 30.006-8.067 44.53 10.07 14.525 30.008 18.136 44.53 8.067C368.546 316.983 384 287.478 384 256z"></path>
     </symbol>
@@ -194,7 +202,9 @@ nyro-video {
 button:hover .nyroVideoIcon {
     opacity: 1;
 }
-.nyroVideoPlayPause .nyroVideoIcon {
+.nyroVideoPlayPause .nyroVideoIcon,
+.nyroVideoPrev .nyroVideoIcon,
+.nyroVideoNext .nyroVideoIcon {
     width: 18px;
     height: 18px;
     margin-left: 3px;
@@ -452,25 +462,168 @@ nyro-video.fullscreened {
         templateOnce = template.previousElementSibling;
     var templateFullyInserted = false;
 
-    var evtSupportsPassive = false;
-    try {
-        var opts = Object.defineProperty({}, 'passive', {
-            get: function() {
-                evtSupportsPassive = true;
+    if (!window._nyroVideoUtils) {
+        var evtSupportsPassive = false;
+        try {
+            var opts = Object.defineProperty({}, 'passive', {
+                get: function() {
+                    evtSupportsPassive = true;
+                }
+            });
+            window.addEventListener('testPassive', null, opts);
+            window.removeEventListener('testPassive', null, opts);
+        } catch (e) {}
+
+        var curClbPointerEnd,
+            clbPointerEnd = function(e) {
+                if (curClbPointerEnd) {
+                    curClbPointerEnd(e);
+                    curClbPointerEnd = false;
+                }
+                document.removeEventListener(evtPointerEnd, clbPointerEnd);
+            },
+            fsElement,
+            fsClb = false,
+            removeFullscreenClb = function() {
+                document.removeEventListener('fullscreenchange', fsClb);
+                document.removeEventListener('mozfullscreenchange', fsClb);
+                document.removeEventListener('webkitfullscreenchange', fsClb);
+                document.removeEventListener('msfullscreenchange', fsClb);
+            },
+            addFullscreenClb = function(clb) {
+                fsClb = clb;
+                document.addEventListener('fullscreenchange', clb);
+                document.addEventListener('mozfullscreenchange', clb);
+                document.addEventListener('webkitfullscreenchange', clb);
+                document.addEventListener('msfullscreenchange', clb);
+            },
+            resizeClbs = [],
+            resizeRaf;
+
+        window._nyroVideoUtils = {
+            evtPassivePrm: evtSupportsPassive ? {
+                passive: true
+            } : false,
+            isTouch: 'ontouchstart' in window || navigator.maxTouchPoints,
+            svgIcon: function(name, addClass) {
+                return '<svg class="nyroVideoIcon nyroVideoIcon-'+name+(addClass ? ' '+addClass : '')+'" viewBox="0 0 100 100">'
+                            +'<use width=100 height=100 xlink:href="#nyroVideoIcon-'+name+'"></use>'
+                        +'</svg>';
+            },
+            str_pad_left: function(string, pad, length) {
+                return (new Array(length + 1).join(pad) + string).slice(-length);
+            },
+            humanTime: function(time) {
+                var seconds = parseInt(time),
+                    minutes = Math.floor(time / 60),
+                    seconds = seconds - minutes * 60;
+
+                return window._nyroVideoUtils.str_pad_left(minutes, '0', 2) + ':' + window._nyroVideoUtils.str_pad_left(seconds, '0', 2);
+            },
+            documentClbPointerEnd: function(clb) {
+                if (curClbPointerEnd) {
+                    curClbPointerEnd();
+                    curClbPointerEnd = clb;
+                } else {
+                    curClbPointerEnd = clb;
+                    document.addEventListener(evtPointerEnd, clbPointerEnd, window._nyroVideoUtils.evtPassivePrm);
+                }
+            },
+            fullscreen: {
+                can: document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
+                getElt: function() {
+                    if (document.fullscreenElement) {
+                        return document.fullscreenElement;
+                    } else if (document.mozFullScreenElement) {
+                        return document.mozFullScreenElement;
+                    } else if (document.webkitFullscreenElement) {
+                        return document.webkitFullscreenElement;
+                    } else if (document.msFullscreenElement) {
+                        return document.msFullscreenElement;
+                    }
+                },
+                make: function(element) {
+                    var isFullScreen = false;
+                    if (fsElement && fsElement == element) {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.mozCancelFullScreen) {
+                            document.mozCancelFullScreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        } else if (document.msExitFullscreen) {
+                            document.msExitFullscreen();
+                        }
+                        fsElement = false;
+                        isFullScreen = false;
+                        removeFullscreenClb();
+                    } else {
+                        if (element.requestFullscreen) {
+                            element.requestFullscreen();
+                            isFullScreen = true;
+                        } else if (element.mozRequestFullScreen) {
+                            element.mozRequestFullScreen();
+                            isFullScreen = true;
+                        } else if (element.webkitRequestFullscreen) {
+                            element.webkitRequestFullscreen();
+                            isFullScreen = true;
+                        } else if (element.msRequestFullscreen) {
+                            element.msRequestFullscreen();
+                            isFullScreen = true;
+                        }
+                        if (isFullScreen) {
+                            if (fsElement) {
+                                element.classList.remove('fullscreened');
+                                removeFullscreenClb();
+                            }
+                            fsElement = element;
+                            addFullscreenClb(function(e) {
+                                if (fsElement != window._nyroVideoUtils.fullscreen.getElt()) {
+                                    removeFullscreenClb();
+                                    if (element.exitFullscreen) {
+                                        element.exitFullscreen();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    if (isFullScreen) {
+                        element.classList.add('fullscreened');
+                    } else {
+                        element.classList.remove('fullscreened');
+                    }
+
+                    return isFullScreen;
+                }
+            },
+            resize: {
+                addClb: function(clb) {
+                    resizeClbs.push(clb);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', function(e) {
+            if (document.activeElement && document.activeElement.nodeName.toLowerCase() === 'nyro-video') {
+                document.activeElement._keyDown(e);
             }
         });
-        window.addEventListener('testPassive', null, opts);
-        window.removeEventListener('testPassive', null, opts);
-    } catch (e) {}
+        window.addEventListener('resize', function() {
+            if (resizeRaf) {
+                cancelAnimationFrame(resizeRaf);
+            }
+            resizeRaf = requestAnimationFrame(function() {
+                resizeClbs.forEach(function(clb) {
+                    clb();
+                });
+            });
+        }, window._nyroVideoUtils.evtPassivePrm);
+    }
 
-    const evtPassivePrm = evtSupportsPassive ? {
-        passive: true
-    } : false;
-
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints,
-        evtPointerStart = isTouch ? 'touchstart' : 'mousedown',
-        evtPointerMove = isTouch ? 'touchmove' : 'mousemove',
-        evtPointerEnd = isTouch ? 'touchend' : 'mouseup';
+    const evtPointerStart = window._nyroVideoUtils.isTouch ? 'touchstart' : 'mousedown',
+        evtPointerMove = window._nyroVideoUtils.isTouch ? 'touchmove' : 'mousemove',
+        evtPointerEnd = window._nyroVideoUtils.isTouch ? 'touchend' : 'mouseup';
 
     const videoEvts = [
         'canplay',
@@ -489,139 +642,6 @@ nyro-video.fullscreened {
         'timeupdate',
         'volumechange'
     ];
-
-    var str_pad_left = function(string, pad, length) {
-            return (new Array(length + 1).join(pad) + string).slice(-length);
-        },
-        humanTime = function(time) {
-            var seconds = parseInt(time),
-                minutes = Math.floor(time / 60),
-                seconds = seconds - minutes * 60;
-
-            return str_pad_left(minutes, '0', 2) + ':' + str_pad_left(seconds, '0', 2);
-        },
-        curClbPointerEnd,
-        clbPointerEnd = function(e) {
-            if (curClbPointerEnd) {
-                curClbPointerEnd(e);
-                curClbPointerEnd = false;
-            }
-            document.removeEventListener(evtPointerEnd, clbPointerEnd);
-        },
-        documentClbPointerEnd = function(clb) {
-            if (curClbPointerEnd) {
-                curClbPointerEnd();
-                curClbPointerEnd = clb;
-            } else {
-                curClbPointerEnd = clb;
-                document.addEventListener(evtPointerEnd, clbPointerEnd, evtPassivePrm);
-            }
-        },
-        fsElement,
-        fsClb = false,
-        removeFullscreenClb = function() {
-            document.removeEventListener('fullscreenchange', fsClb);
-            document.removeEventListener('mozfullscreenchange', fsClb);
-            document.removeEventListener('webkitfullscreenchange', fsClb);
-            document.removeEventListener('msfullscreenchange', fsClb);
-        },
-        addFullscreenClb = function(clb) {
-            fsClb = clb;
-            document.addEventListener('fullscreenchange', clb);
-            document.addEventListener('mozfullscreenchange', clb);
-            document.addEventListener('webkitfullscreenchange', clb);
-            document.addEventListener('msfullscreenchange', clb);
-        },
-        canFullScreen = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
-        getFullscreenElt = function() {
-            if (document.fullscreenElement) {
-                return document.fullscreenElement;
-            } else if (document.mozFullScreenElement) {
-                return document.mozFullScreenElement;
-            } else if (document.webkitFullscreenElement) {
-                return document.webkitFullscreenElement;
-            } else if (document.msFullscreenElement) {
-                return document.msFullscreenElement;
-            }
-        },
-        makeFullScreen = function(element) {
-            var isFullScreen = false;
-            if (fsElement && fsElement == element) {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-                fsElement = false;
-                isFullScreen = false;
-                removeFullscreenClb();
-            } else {
-                if (element.requestFullscreen) {
-                    element.requestFullscreen();
-                    isFullScreen = true;
-                } else if (element.mozRequestFullScreen) {
-                    element.mozRequestFullScreen();
-                    isFullScreen = true;
-                } else if (element.webkitRequestFullscreen) {
-                    element.webkitRequestFullscreen();
-                    isFullScreen = true;
-                } else if (element.msRequestFullscreen) {
-                    element.msRequestFullscreen();
-                    isFullScreen = true;
-                }
-                if (isFullScreen) {
-                    if (fsElement) {
-                        element.classList.remove('fullscreened');
-                        removeFullscreenClb();
-                    }
-                    fsElement = element;
-                    addFullscreenClb(function(e) {
-                        if (fsElement != getFullscreenElt()) {
-                            removeFullscreenClb();
-                            element.exitFullscreen();
-                        }
-                    });
-                }
-            }
-
-            if (isFullScreen) {
-                element.classList.add('fullscreened');
-            } else {
-                element.classList.remove('fullscreened');
-            }
-
-            return isFullScreen;
-        },
-        svgIcon = function(name, addClass) {
-            return '<svg class="nyroVideoIcon nyroVideoIcon-'+name+(addClass ? ' '+addClass : '')+'" viewBox="0 0 100 100">'
-                        +'<use width=100 height=100 xlink:href="#nyroVideoIcon-'+name+'"></use>'
-                    +'</svg>';
-        },
-        resizeClbs = [],
-        addResizeClb = function(clb) {
-            resizeClbs.push(clb);
-        },
-        resizeRaf;
-
-    document.addEventListener('keydown', function(e) {
-        if (document.activeElement && document.activeElement.nodeName.toLowerCase() === 'nyro-video') {
-            document.activeElement._keyDown(e);
-        }
-    });
-    window.addEventListener('resize', function() {
-        if (resizeRaf) {
-            cancelAnimationFrame(resizeRaf);
-        }
-        resizeRaf = requestAnimationFrame(function() {
-            resizeClbs.forEach(function(clb) {
-                clb();
-            });
-        });
-    }, evtPassivePrm);
 
     if (false && window.ShadyCSS) {
         window.ShadyCSS.prepareTemplate(template, 'nyro-video');
@@ -643,17 +663,17 @@ nyro-video.fullscreened {
             };
 
             videoEvts.forEach(function(evt) {
-                this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
+                this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), window._nyroVideoUtils.evtPassivePrm);
             }.bind(this));
 
-            if (!isTouch) {
+            if (!window._nyroVideoUtils.isTouch) {
                 this.addEventListener('mouseleave', function() {
                     if (!this.paused) {
                         this._dom.content.classList.add('hideUi');
                     }
-                }.bind(this), evtPassivePrm);
-                this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
-                this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
+                }.bind(this), window._nyroVideoUtils.evtPassivePrm);
+                this.addEventListener('mouseenter', this._showUiTimer.bind(this), window._nyroVideoUtils.evtPassivePrm);
+                this.addEventListener('mousemove', this._showUiTimer.bind(this), window._nyroVideoUtils.evtPassivePrm);
             }
 
             if (false && window.ShadyCSS) {
@@ -809,15 +829,15 @@ nyro-video.fullscreened {
                         html += '<div class="nyroVideoProgress"><div class="nyroVideoProgressLoad"></div><div class="nyroVideoProgressRead"></div></div>';
                         break;
                     case 'playPause':
-                        html += '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">'+svgIcon('play')+'</button><button class="nyroVideoPause">'+svgIcon('pause')+'</button></div>';
+                        html += '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">'+window._nyroVideoUtils.svgIcon('play')+'</button><button class="nyroVideoPause">'+window._nyroVideoUtils.svgIcon('pause')+'</button></div>';
                         break;
                     case 'volume':
-                        html += '<div class="nyroVideoVolume"><button class="nyroVideoMute">'+svgIcon('volume-down')+svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+svgIcon('volume-off')+'</button>';
-                        if (!isTouch) {
+                        html += '<div class="nyroVideoVolume"><button class="nyroVideoMute">'+window._nyroVideoUtils.svgIcon('volume-down')+window._nyroVideoUtils.svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+window._nyroVideoUtils.svgIcon('volume-off')+'</button>';
+                        if (!window._nyroVideoUtils.isTouch) {
                             html += '<div class="nyroVideoVolumeBar"><div class="nyroVideoVolumeCursor"></div></div>';
                         }
                         html += '</div>';
-                        htmlAd += '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">'+svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+svgIcon('volume-off')+'</button></div>';
+                        htmlAd += '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">'+window._nyroVideoUtils.svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+window._nyroVideoUtils.svgIcon('volume-off')+'</button></div>';
                         break;
                     case 'currentTime':
                         html += '<div class="nyroVideoCurrentTime"></div>';
@@ -835,12 +855,12 @@ nyro-video.fullscreened {
                         html += '<div class="nyroVideoQuality"></div>';
                         break;
                     case 'fullscreen':
-                        if (canFullScreen) {
-                            html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">'+svgIcon('fullscreen')+'</button><button class="nyroVideoExitFullscreen">'+svgIcon('exitFullscreen')+'</button></div>';
+                        if (window._nyroVideoUtils.fullscreen.can) {
+                            html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">'+window._nyroVideoUtils.svgIcon('fullscreen')+'</button><button class="nyroVideoExitFullscreen">'+window._nyroVideoUtils.svgIcon('exitFullscreen')+'</button></div>';
                         }
                         break;
                     case 'download':
-                        html += '<div class="nyroVideoDownload"><button class="nyroVideoDownloadBut">'+svgIcon('download')+'</button></div>';
+                        html += '<div class="nyroVideoDownload"><button class="nyroVideoDownloadBut">'+window._nyroVideoUtils.svgIcon('download')+'</button></div>';
                         break;
                     case 'spacer':
                         html += '<div class="nyroVideoSpacer"></div>';
@@ -860,7 +880,7 @@ nyro-video.fullscreened {
             this._dom.controls = this._dom.global.querySelector('.nyroVideoControls');
             this._dom.subConstrols = {};
 
-            if (isTouch) {
+            if (window._nyroVideoUtils.isTouch) {
                 this._dom.video.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     if (this._dom.content.classList.contains('hideUi')) {
@@ -872,11 +892,11 @@ nyro-video.fullscreened {
             } else {
                 this._dom.controls.addEventListener('mouseenter', function() {
                     this._hoverControls = true;
-                }.bind(this), evtPassivePrm);
+                }.bind(this), window._nyroVideoUtils.evtPassivePrm);
                 this._dom.controls.addEventListener('mouseleave', function() {
                     this._hoverControls = false;
                     this._hideUiTimer();
-                }.bind(this), evtPassivePrm);
+                }.bind(this), window._nyroVideoUtils.evtPassivePrm);
                 this._dom.video.addEventListener('click', function(e) {
                     e.preventDefault();
                     this.toggle();
@@ -927,20 +947,20 @@ nyro-video.fullscreened {
                         }
                         moveProgressBar(e, el);
                         this._dom.mousemove = el;
-                        this._dom.content.addEventListener(evtPointerMove, moveProgressBar, evtPassivePrm);
-                        documentClbPointerEnd(function(e) {
+                        this._dom.content.addEventListener(evtPointerMove, moveProgressBar, window._nyroVideoUtils.evtPassivePrm);
+                        window._nyroVideoUtils.documentClbPointerEnd(function(e) {
                             this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
                             moveProgressBar(e);
                             moveProgressBarEnd();
                         }.bind(this));
-                    }.bind(this), evtPassivePrm);
+                    }.bind(this), window._nyroVideoUtils.evtPassivePrm);
                     el.addEventListener(evtPointerEnd, function(e) {
                         this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
                         this._dom.mousemove = false;
                         moveProgressBar(e, el);
                         moveProgressBarEnd();
                     }.bind(this));
-                }.bind(this), evtPassivePrm);
+                }.bind(this));
             }
 
             if (controls.indexOf('playPause') !== -1) {
@@ -986,7 +1006,7 @@ nyro-video.fullscreened {
                     }.bind(this));
                 }.bind(this));
 
-                if (!isTouch) {
+                if (!window._nyroVideoUtils.isTouch) {
                     const moveVolumeBar = function(e, el) {
                         if (!e) {
                             return;
@@ -1012,18 +1032,18 @@ nyro-video.fullscreened {
                         el.addEventListener(evtPointerStart, function(e) {
                             moveVolumeBar(e, el);
                             this._dom.mousemove = el;
-                            this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, evtPassivePrm);
-                            documentClbPointerEnd(function(e) {
+                            this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, window._nyroVideoUtils.evtPassivePrm);
+                            window._nyroVideoUtils.documentClbPointerEnd(function(e) {
                                 this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
                                 moveVolumeBar(e);
                             }.bind(this));
-                        }.bind(this), evtPassivePrm);
+                        }.bind(this), window._nyroVideoUtils.evtPassivePrm);
                         el.addEventListener(evtPointerEnd, function(e) {
                             this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
                             this._dom.mousemove = false;
                             moveVolumeBar(e, el);
                         }.bind(this));
-                    }.bind(this), evtPassivePrm, evtPassivePrm);
+                    }.bind(this));
                 }
 
                 this._updateControls('volume');
@@ -1089,6 +1109,15 @@ nyro-video.fullscreened {
                     }.bind(this));
                 }
             }
+
+            this.dispatchEvent(new CustomEvent('nyroVideoControlsInited', {
+                bubbles: true,
+                cancelable: true,
+                detail: {
+                    controls: controls,
+                    dom: this._dom
+                }
+            }));
         }
 
         _onVideoEvt(e) {
@@ -1115,12 +1144,15 @@ nyro-video.fullscreened {
                     this._updateControls('duration');
                     break;
                 case 'timeupdate':
+                    this._dom.content.classList.remove('seeking');
                     this._updateControls('time');
                     break;
                 case 'progress':
                     this._updateControls('load');
                     break;
                 case 'play':
+                    this._dom.content.classList.add('seeking');
+                    // no break
                 case 'pause':
                     this._updateControls('state');
                     break;
@@ -1151,6 +1183,18 @@ nyro-video.fullscreened {
             this._bubbleEvents = !!value;
         }
 
+        set controlsMaster(master) {
+            if (master && !master.controlsMasterCall) {
+                console.warn('Provided controls master does not implement a controlsMasterCall function', master);
+                master = false;
+            }
+            this._controlsMaster = master;
+        }
+
+        get controlsMaster() {
+            return this._controlsMaster;
+        }
+
         _updateControls(type, clb) {
             if (!this._dom.controls || !this._dom.subConstrols) {
                 if (clb) {
@@ -1161,7 +1205,7 @@ nyro-video.fullscreened {
             switch (type) {
                 case 'duration':
                     if (this._dom.subConstrols.duration) {
-                        const durationText = humanTime(this.duration);
+                        const durationText = window._nyroVideoUtils.humanTime(this.duration);
                         this._dom.subConstrols.duration.forEach(function(el) {
                             el.textContent = durationText;
                         });
@@ -1179,13 +1223,13 @@ nyro-video.fullscreened {
                         });
                     }
                     if (this._dom.subConstrols.currentTime) {
-                        const currentText = humanTime(current);
+                        const currentText = window._nyroVideoUtils.humanTime(current);
                         this._dom.subConstrols.currentTime.forEach(function(el) {
                             el.textContent = currentText;
                         });
                     }
                     if (this._dom.subConstrols.remainingTime) {
-                        const remainingText = '-' + humanTime(duration - current);
+                        const remainingText = '-' + window._nyroVideoUtils.humanTime(duration - current);
                         this._dom.subConstrols.remainingTime.forEach(function(el) {
                             el.textContent = remainingText;
                         });
@@ -1294,7 +1338,6 @@ nyro-video.fullscreened {
 
                                 }.bind(this));
                             }.bind(this));
-
                         } else {
                             this._dom.subConstrols.quality.forEach(function(el) {
                                 el.style.display = 'none';
@@ -1316,7 +1359,6 @@ nyro-video.fullscreened {
                     this._hls.attachMedia(this._dom.video);
 
                     this._tryAutoPlay();
-
                 } else if (canPlayNativeHls) {
                     this._dom.video.src = this._src;
                 } else {
@@ -1336,11 +1378,11 @@ nyro-video.fullscreened {
                         this._ima3.renderingSettings.restoreCustomPlaybackStateOnAdBreakComplete = true;
 
                         // Preloading give some error on mobile
-                        this._ima3.renderingSettings.enablePreloading = !isTouch;
+                        this._ima3.renderingSettings.enablePreloading = !window._nyroVideoUtils.isTouch;
 
                         this._ima3.manager = adsManagerLoadedEvent.getAdsManager(this._dom.video, this._ima3.renderingSettings);
 
-                        addResizeClb(function() {
+                        window._nyroVideoUtils.resize.addClb(function() {
                             this._resizeIma3();
                         }.bind(this));
 
@@ -1375,7 +1417,6 @@ nyro-video.fullscreened {
                         } else {
                             this._tryAutoPlay();
                         }
-
                     }.bind(this),
                     false);
 
@@ -1577,7 +1618,11 @@ nyro-video.fullscreened {
         }
 
         fullscreen() {
-            if (this._fullscreened || !canFullScreen) {
+            if (this.controlsMaster && !this.controlsMaster.controlsMasterCall(this, 'fullscreen')) {
+                return;
+            }
+
+            if (this._fullscreened || !window._nyroVideoUtils.fullscreen.can) {
                 return;
             }
 
@@ -1588,18 +1633,22 @@ nyro-video.fullscreened {
             this.style.width = '100%';
             this.style.height = '100%';
 
-            this._fullscreened = makeFullScreen(this);
+            this._fullscreened = window._nyroVideoUtils.fullscreen.make(this);
 
             this.focus();
             this._resizeIma3();
         }
 
         exitFullscreen() {
+            if (this.controlsMaster && !this.controlsMaster.controlsMasterCall(this, 'exitFullscreen')) {
+                return;
+            }
+
             if (!this._fullscreened) {
                 return;
             }
 
-            this._fullscreened = makeFullScreen(this);
+            this._fullscreened = window._nyroVideoUtils.fullscreen.make(this);
 
             this.style.width = this._previousFullscreened.width;
             this.style.height = this._previousFullscreened.height;
@@ -1649,7 +1698,6 @@ nyro-video.fullscreened {
                     return;
             }
 
-
             switch (e.key) {
                 case ' ':
                     e.preventDefault();
@@ -1675,7 +1723,7 @@ nyro-video.fullscreened {
             if (this._ima3 && this._ima3.manager) {
                 requestAnimationFrame(function() {
                     this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, this._fullscreened ? google.ima.ViewMode.FULLSCREEN : google.ima.ViewMode.NORMAL);
-                    if (isTouch && this._fullscreened) {
+                    if (window._nyroVideoUtils.isTouch && this._fullscreened) {
                         // In some case, when nav bar disappear, we have to wait a little bit more
                         setTimeout(function() {
                             this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.FULLSCREEN);
@@ -1752,7 +1800,11 @@ nyro-video.fullscreened {
         get volume() {
             return this._dom.video.volume;
         }
-    }
+
+        get fullscreened() {
+            return this._fullscreened;
+        }
+    };
 
     window.customElements.define('nyro-video', NyroVideo);
 

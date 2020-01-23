@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test video pls</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script type="module" src="../nyro-video/nyro-video.js"></script>
+    <script type="module" src="nyro-videopls.js"></script>
+
+    <!-- If you want to use the old HTML import version, using polyfill -->
+    <!--
+    <link rel="import" href="../nyro-video/nyro-video.html" />
+    <link rel="import" href="nyro-videopls.html" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.3.3/webcomponents-loader.js"></script>
+    -->
+    
+    <style>
+    nyro-videopls {
+        display: block;
+        width: 800px;
+        max-width: 100%;
+        height: 500px;
+    }
+    nyro-video {
+      display: block;
+      width: 800px;
+      max-width: 100%;
+      height: 500px;
+    }
+    </style>
+
+  </head>
+  <body>
+    <nyro-videopls
+        autoplay
+        controls
+        ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="
+    >
+        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
+        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="></nyro-videoplsitem>
+        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
+    </nyro-videopls>
+
+  </body>
+</html>

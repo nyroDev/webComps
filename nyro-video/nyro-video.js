@@ -4,7 +4,7 @@ const scriptUrls = {
 };
 const scriptCallbacks = {};
 const headDom = document.querySelector('head');
-const loadScript = function(name, callback, callbackError) {
+const loadScript = (name, callback, callbackError) => {
     if (scriptCallbacks[name] !== undefined) {
         // already started, loaded or error
         if (scriptCallbacks[name] === true) {
@@ -29,13 +29,13 @@ const loadScript = function(name, callback, callbackError) {
     var script = document.createElement('script');
     script.async = 1;
 
-    script.onload = script.onreadystatechange = function(_, isAbort) {
+    script.onload = script.onreadystatechange = (_, isAbort) => {
         if (isAbort || !script.readyState || /loaded|complete/.test(script.readyState)) {
             script.onload = script.onreadystatechange = null;
             script = undefined;
 
             if (!isAbort) {
-                scriptCallbacks[name].forEach(function(clb) {
+                scriptCallbacks[name].forEach((clb) => {
                     clb.ok(name);
                 })
                 scriptCallbacks[name] = true;
@@ -43,8 +43,8 @@ const loadScript = function(name, callback, callbackError) {
         }
     };
 
-    script.onerror = function(e) {
-        scriptCallbacks[name].forEach(function(clb) {
+    script.onerror = (e) => {
+        scriptCallbacks[name].forEach((clb) => {
             clb.ko(name);
         })
         scriptCallbacks[name] = false;
@@ -82,6 +82,14 @@ templateOnce.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="display
 </symbol>
 <symbol id="nyroVideoIcon-pause" viewBox="0 0 448 512">
     <path d="M144 479H48c-26.5 0-48-21.5-48-48V79c0-26.5 21.5-48 48-48h96c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48zm304-48V79c0-26.5-21.5-48-48-48h-96c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h96c26.5 0 48-21.5 48-48z"></path>
+</symbol>
+<symbol id="nyroVideoIcon-next" viewBox="0 0 512 512">
+    <path d="m311.66561,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05914,-18.5 23.13258,-64.1 0,-82.6z"/>
+    <path d="m494.67809,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05915,-18.5 23.13258,-64.1 0,-82.6z"/>
+</symbol>
+<symbol id="nyroVideoIcon-prev" viewBox="0 0 512 512">
+    <path transform="rotate(-180 164.49375915527347,256)" d="m311.66561,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05914,-18.5 23.13258,-64.1 0,-82.6z"/>
+    <path transform="rotate(-180 347.5062561035156,256)" d="m494.67809,214.65757l-258.4974,-208.1c-21.00291,-16.9 -53.16821,-0.5 -53.16821,41.3l0,416.1c0,37.5 29.88876,60.1 53.16821,41.3l258.4974,-208c23.05915,-18.5 23.13258,-64.1 0,-82.6z"/>
 </symbol>
 <symbol id="nyroVideoIcon-volume-down" viewBox="0 0 576 512">
     <path d="M256 88.017v335.964c0 21.438-25.943 31.998-40.971 16.971L126.059 352H24c-13.255 0-24-10.745-24-24V184c0-13.255 10.745-24 24-24h102.059l88.971-88.954c15.01-15.01 40.97-4.49 40.97 16.971zM384 256c0-33.717-17.186-64.35-45.972-81.944-15.079-9.214-34.775-4.463-43.992 10.616s-4.464 34.775 10.615 43.992C314.263 234.538 320 244.757 320 256a32.056 32.056 0 0 1-13.802 26.332c-14.524 10.069-18.136 30.006-8.067 44.53 10.07 14.525 30.008 18.136 44.53 8.067C368.546 316.983 384 287.478 384 256z"></path>
@@ -265,7 +273,9 @@ nyro-video {
 button:hover .nyroVideoIcon {
     opacity: 1;
 }
-.nyroVideoPlayPause .nyroVideoIcon {
+.nyroVideoPlayPause .nyroVideoIcon,
+.nyroVideoPrev .nyroVideoIcon,
+.nyroVideoNext .nyroVideoIcon {
     width: 18px;
     height: 18px;
     margin-left: 3px;
@@ -444,25 +454,172 @@ nyro-video.fullscreened {
 }
 </style>`;
 
-let evtSupportsPassive = false;
-try {
-    const opts = Object.defineProperty({}, 'passive', {
-        get: function() {
-            evtSupportsPassive = true;
+if (!window._nyroVideoUtils) {
+    let evtSupportsPassive = false;
+    try {
+        const opts = Object.defineProperty({}, 'passive', {
+            get: () => {
+                evtSupportsPassive = true;
+            }
+        });
+        window.addEventListener('testPassive', null, opts);
+        window.removeEventListener('testPassive', null, opts);
+    } catch (e) {}
+
+    let
+        curClbPointerEnd,
+        fsElement,
+        fsClb = false,
+        resizeRaf;
+
+    const
+        clbPointerEnd = (e) => {
+            if (curClbPointerEnd) {
+                curClbPointerEnd(e);
+                curClbPointerEnd = false;
+            }
+            document.removeEventListener(evtPointerEnd, clbPointerEnd);
+        },
+        removeFullscreenClb = () => {
+            document.removeEventListener('fullscreenchange', fsClb);
+            document.removeEventListener('mozfullscreenchange', fsClb);
+            document.removeEventListener('webkitfullscreenchange', fsClb);
+            document.removeEventListener('msfullscreenchange', fsClb);
+        },
+        addFullscreenClb = (clb) => {
+            fsClb = clb;
+            document.addEventListener('fullscreenchange', clb);
+            document.addEventListener('mozfullscreenchange', clb);
+            document.addEventListener('webkitfullscreenchange', clb);
+            document.addEventListener('msfullscreenchange', clb);
+        },
+        resizeClbs = [];
+
+    window._nyroVideoUtils = {
+        evtPassivePrm: evtSupportsPassive ? {
+            passive: true
+        } : false,
+        isTouch: 'ontouchstart' in window || navigator.maxTouchPoints,
+        svgIcon: (name, addClass) => {
+            return '<svg class="nyroVideoIcon nyroVideoIcon-' + name + (addClass ? ' ' + addClass : '') + '" viewBox="0 0 100 100">' +
+                '<use width=100 height=100 xlink:href="#nyroVideoIcon-' + name + '"></use>' +
+                '</svg>';
+        },
+        str_pad_left: (string, pad, length) => {
+            return (new Array(length + 1).join(pad) + string).slice(-length);
+        },
+        humanTime: (time) => {
+            const timeSeconds = parseInt(time),
+                minutes = Math.floor(time / 60),
+                seconds = timeSeconds - minutes * 60;
+
+            return window._nyroVideoUtils.str_pad_left(minutes, '0', 2) + ':' + window._nyroVideoUtils.str_pad_left(seconds, '0', 2);
+        },
+        documentClbPointerEnd: (clb) => {
+            if (curClbPointerEnd) {
+                curClbPointerEnd();
+                curClbPointerEnd = clb;
+            } else {
+                curClbPointerEnd = clb;
+                document.addEventListener(evtPointerEnd, clbPointerEnd, window._nyroVideoUtils.evtPassivePrm);
+            }
+        },
+        fullscreen: {
+            can: document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
+            getElt: () => {
+                if (document.fullscreenElement) {
+                    return document.fullscreenElement;
+                } else if (document.mozFullScreenElement) {
+                    return document.mozFullScreenElement;
+                } else if (document.webkitFullscreenElement) {
+                    return document.webkitFullscreenElement;
+                } else if (document.msFullscreenElement) {
+                    return document.msFullscreenElement;
+                }
+            },
+            make: (element) => {
+                let isFullScreen = false;
+                if (fsElement && fsElement == element) {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    fsElement = false;
+                    isFullScreen = false;
+                    removeFullscreenClb();
+                } else {
+                    if (element.requestFullscreen) {
+                        element.requestFullscreen();
+                        isFullScreen = true;
+                    } else if (element.mozRequestFullScreen) {
+                        element.mozRequestFullScreen();
+                        isFullScreen = true;
+                    } else if (element.webkitRequestFullscreen) {
+                        element.webkitRequestFullscreen();
+                        isFullScreen = true;
+                    } else if (element.msRequestFullscreen) {
+                        element.msRequestFullscreen();
+                        isFullScreen = true;
+                    }
+                    if (isFullScreen) {
+                        if (fsElement) {
+                            element.classList.remove('fullscreened');
+                            removeFullscreenClb();
+                        }
+                        fsElement = element;
+                        addFullscreenClb((e) => {
+                            if (fsElement != window._nyroVideoUtils.fullscreen.getElt()) {
+                                removeFullscreenClb();
+                                if (element.exitFullscreen) {
+                                    element.exitFullscreen();
+                                }
+                            }
+                        });
+                    }
+                }
+
+                if (isFullScreen) {
+                    element.classList.add('fullscreened');
+                } else {
+                    element.classList.remove('fullscreened');
+                }
+
+                return isFullScreen;
+            }
+        },
+        resize: {
+            addClb: (clb) => {
+                resizeClbs.push(clb);
+            }
+        }
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if (document.activeElement && document.activeElement.nodeName.toLowerCase() === 'nyro-video') {
+            document.activeElement._keyDown(e);
         }
     });
-    window.addEventListener('testPassive', null, opts);
-    window.removeEventListener('testPassive', null, opts);
-} catch (e) {}
+    window.addEventListener('resize', () => {
+        if (resizeRaf) {
+            cancelAnimationFrame(resizeRaf);
+        }
+        resizeRaf = requestAnimationFrame(() => {
+            resizeClbs.forEach((clb) => {
+                clb();
+            });
+        });
+    }, window._nyroVideoUtils.evtPassivePrm);
+}
 
-const evtPassivePrm = evtSupportsPassive ? {
-    passive: true
-} : false;
-
-const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints,
-    evtPointerStart = isTouch ? 'touchstart' : 'mousedown',
-    evtPointerMove = isTouch ? 'touchmove' : 'mousemove',
-    evtPointerEnd = isTouch ? 'touchend' : 'mouseup';
+const
+    evtPointerStart = window._nyroVideoUtils.isTouch ? 'touchstart' : 'mousedown',
+    evtPointerMove = window._nyroVideoUtils.isTouch ? 'touchmove' : 'mousemove',
+    evtPointerEnd = window._nyroVideoUtils.isTouch ? 'touchend' : 'mouseup';
 
 const videoEvts = [
     'canplay',
@@ -482,142 +639,6 @@ const videoEvts = [
     'volumechange'
 ];
 
-let 
-    curClbPointerEnd,
-    fsElement,
-    fsClb = false,
-    resizeRaf;
-
-const str_pad_left = function(string, pad, length) {
-        return (new Array(length + 1).join(pad) + string).slice(-length);
-    },
-    humanTime = function(time) {
-        var seconds = parseInt(time),
-            minutes = Math.floor(time / 60),
-            seconds = seconds - minutes * 60;
-
-        return str_pad_left(minutes, '0', 2) + ':' + str_pad_left(seconds, '0', 2);
-    },
-    clbPointerEnd = function(e) {
-        if (curClbPointerEnd) {
-            curClbPointerEnd(e);
-            curClbPointerEnd = false;
-        }
-        document.removeEventListener(evtPointerEnd, clbPointerEnd);
-    },
-    documentClbPointerEnd = function(clb) {
-        if (curClbPointerEnd) {
-            curClbPointerEnd();
-            curClbPointerEnd = clb;
-        } else {
-            curClbPointerEnd = clb;
-            document.addEventListener(evtPointerEnd, clbPointerEnd, evtPassivePrm);
-        }
-    },
-    removeFullscreenClb = function() {
-        document.removeEventListener('fullscreenchange', fsClb);
-        document.removeEventListener('mozfullscreenchange', fsClb);
-        document.removeEventListener('webkitfullscreenchange', fsClb);
-        document.removeEventListener('msfullscreenchange', fsClb);
-    },
-    addFullscreenClb = function(clb) {
-        fsClb = clb;
-        document.addEventListener('fullscreenchange', clb);
-        document.addEventListener('mozfullscreenchange', clb);
-        document.addEventListener('webkitfullscreenchange', clb);
-        document.addEventListener('msfullscreenchange', clb);
-    },
-    canFullScreen = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen,
-    getFullscreenElt = function() {
-        if (document.fullscreenElement) {
-            return document.fullscreenElement;
-        } else if (document.mozFullScreenElement) {
-            return document.mozFullScreenElement;
-        } else if (document.webkitFullscreenElement) {
-            return document.webkitFullscreenElement;
-        } else if (document.msFullscreenElement) {
-            return document.msFullscreenElement;
-        }
-    },
-    makeFullScreen = function(element) {
-        var isFullScreen = false;
-        if (fsElement && fsElement == element) {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-            fsElement = false;
-            isFullScreen = false;
-            removeFullscreenClb();
-        } else {
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-                isFullScreen = true;
-            } else if (element.mozRequestFullScreen) {
-                element.mozRequestFullScreen();
-                isFullScreen = true;
-            } else if (element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-                isFullScreen = true;
-            } else if (element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-                isFullScreen = true;
-            }
-            if (isFullScreen) {
-                if (fsElement) {
-                    element.classList.remove('fullscreened');
-                    removeFullscreenClb();
-                }
-                fsElement = element;
-                addFullscreenClb(function(e) {
-                    if (fsElement != getFullscreenElt()) {
-                        removeFullscreenClb();
-                        element.exitFullscreen();
-                    }
-                });
-            }
-        }
-
-        if (isFullScreen) {
-            element.classList.add('fullscreened');
-        } else {
-            element.classList.remove('fullscreened');
-        }
-
-        return isFullScreen;
-    },
-    svgIcon = function(name, addClass) {
-        return '<svg class="nyroVideoIcon nyroVideoIcon-'+name+(addClass ? ' '+addClass : '')+'" viewBox="0 0 100 100">'
-                    +'<use width=100 height=100 xlink:href="#nyroVideoIcon-'+name+'"></use>'
-                +'</svg>';
-    },
-    resizeClbs = [],
-    addResizeClb = function(clb) {
-        resizeClbs.push(clb);
-    };
-
-
-document.addEventListener('keydown', function(e) {
-    if (document.activeElement && document.activeElement.nodeName.toLowerCase() === 'nyro-video') {
-        document.activeElement._keyDown(e);
-    }
-});
-window.addEventListener('resize', function() {
-    if (resizeRaf) {
-        cancelAnimationFrame(resizeRaf);
-    }
-    resizeRaf = requestAnimationFrame(function() {
-        resizeClbs.forEach(function(clb) {
-            clb();
-        });
-    });
-}, evtPassivePrm);
-
 window.NyroVideo = class extends HTMLElement {
 
     connectedCallback() {
@@ -632,18 +653,18 @@ window.NyroVideo = class extends HTMLElement {
             ad: clone.querySelector('.nyroVideoAd')
         };
 
-        videoEvts.forEach(function(evt) {
-            this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), evtPassivePrm);
-        }.bind(this));
+        videoEvts.forEach((evt) => {
+            this._dom.video.addEventListener(evt, this._onVideoEvt.bind(this), window._nyroVideoUtils.evtPassivePrm);
+        });
 
-        if (!isTouch) {
-            this.addEventListener('mouseleave', function() {
+        if (!window._nyroVideoUtils.isTouch) {
+            this.addEventListener('mouseleave', () => {
                 if (!this.paused) {
                     this._dom.content.classList.add('hideUi');
                 }
-            }.bind(this), evtPassivePrm);
-            this.addEventListener('mouseenter', this._showUiTimer.bind(this), evtPassivePrm);
-            this.addEventListener('mousemove', this._showUiTimer.bind(this), evtPassivePrm);
+            }, window._nyroVideoUtils.evtPassivePrm);
+            this.addEventListener('mouseenter', this._showUiTimer.bind(this), window._nyroVideoUtils.evtPassivePrm);
+            this.addEventListener('mousemove', this._showUiTimer.bind(this), window._nyroVideoUtils.evtPassivePrm);
         }
 
         const poster = this.getAttribute('poster');
@@ -676,7 +697,7 @@ window.NyroVideo = class extends HTMLElement {
         if (true || this._ads) {
             // Ads is not supported in shadow DOM, add insertOnce element
             // @see https://groups.google.com/forum/?hl=en-us#!topic/ima-sdk/OnwP__Od1UM
-            // Always use Shadow DOM because of ads bug and Safaris SVG bug
+            // Never use Shadow DOM because of ads bug and Safaris SVG bug
             if (!templateFullyInserted) {
                 headDom.insertBefore(document.importNode(templateOnce.content, true), headDom.firstChild);
                 templateFullyInserted = true;
@@ -746,12 +767,12 @@ window.NyroVideo = class extends HTMLElement {
         if (this._uiTimer) {
             clearTimeout(this._uiTimer);
         }
-        this._uiTimer = setTimeout(function() {
+        this._uiTimer = setTimeout(() => {
             if (!this.paused && !this._hoverControls) {
                 this._dom.content.classList.add('hideUi');
             }
             this._uiTimer = false;
-        }.bind(this), 3000);
+        }, 3000);
     }
 
     _initControls(controls) {
@@ -790,21 +811,21 @@ window.NyroVideo = class extends HTMLElement {
 
         var html = '<div class="nyroVideoControls">';
         var htmlAd = '';
-        controls.forEach(function(control) {
+        controls.forEach((control) => {
             switch (control) {
                 case 'progress':
                     html += '<div class="nyroVideoProgress"><div class="nyroVideoProgressLoad"></div><div class="nyroVideoProgressRead"></div></div>';
                     break;
                 case 'playPause':
-                    html += '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">'+svgIcon('play')+'</button><button class="nyroVideoPause">'+svgIcon('pause')+'</button></div>';
+                    html += '<div class="nyroVideoPlayPause"><button class="nyroVideoPlay">' + window._nyroVideoUtils.svgIcon('play') + '</button><button class="nyroVideoPause">' + window._nyroVideoUtils.svgIcon('pause') + '</button></div>';
                     break;
                 case 'volume':
-                    html += '<div class="nyroVideoVolume"><button class="nyroVideoMute">'+svgIcon('volume-down')+svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+svgIcon('volume-off')+'</button>';
-                    if (!isTouch) {
+                    html += '<div class="nyroVideoVolume"><button class="nyroVideoMute">' + window._nyroVideoUtils.svgIcon('volume-down') + window._nyroVideoUtils.svgIcon('volume-up') + '</button><button class="nyroVideoUnmute">' + window._nyroVideoUtils.svgIcon('volume-off') + '</button>';
+                    if (!window._nyroVideoUtils.isTouch) {
                         html += '<div class="nyroVideoVolumeBar"><div class="nyroVideoVolumeCursor"></div></div>';
                     }
                     html += '</div>';
-                    htmlAd += '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">'+svgIcon('volume-up')+'</button><button class="nyroVideoUnmute">'+svgIcon('volume-off')+'</button></div>';
+                    htmlAd += '<div class="nyroVideoAdVolume"><button class="nyroVideoMute">' + window._nyroVideoUtils.svgIcon('volume-up') + '</button><button class="nyroVideoUnmute">' + window._nyroVideoUtils.svgIcon('volume-off') + '</button></div>';
                     break;
                 case 'currentTime':
                     html += '<div class="nyroVideoCurrentTime"></div>';
@@ -822,12 +843,12 @@ window.NyroVideo = class extends HTMLElement {
                     html += '<div class="nyroVideoQuality"></div>';
                     break;
                 case 'fullscreen':
-                    if (canFullScreen) {
-                        html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">'+svgIcon('fullscreen')+'</button><button class="nyroVideoExitFullscreen">'+svgIcon('exitFullscreen')+'</button></div>';
+                    if (window._nyroVideoUtils.fullscreen.can) {
+                        html += '<div class="nyroVideoFullscreen"><button class="nyroVideoEnterFullscreen">' + window._nyroVideoUtils.svgIcon('fullscreen') + '</button><button class="nyroVideoExitFullscreen">' + window._nyroVideoUtils.svgIcon('exitFullscreen') + '</button></div>';
                     }
                     break;
                 case 'download':
-                    html += '<div class="nyroVideoDownload"><button class="nyroVideoDownloadBut">'+svgIcon('download')+'</button></div>';
+                    html += '<div class="nyroVideoDownload"><button class="nyroVideoDownloadBut">' + window._nyroVideoUtils.svgIcon('download') + '</button></div>';
                     break;
                 case 'spacer':
                     html += '<div class="nyroVideoSpacer"></div>';
@@ -847,27 +868,27 @@ window.NyroVideo = class extends HTMLElement {
         this._dom.controls = this._dom.global.querySelector('.nyroVideoControls');
         this._dom.subConstrols = {};
 
-        if (isTouch) {
-            this._dom.video.addEventListener('touchend', function(e) {
+        if (window._nyroVideoUtils.isTouch) {
+            this._dom.video.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 if (this._dom.content.classList.contains('hideUi')) {
                     this._showUiTimer();
                 } else {
                     this.toggle();
                 }
-            }.bind(this));
+            });
         } else {
-            this._dom.controls.addEventListener('mouseenter', function() {
+            this._dom.controls.addEventListener('mouseenter', () => {
                 this._hoverControls = true;
-            }.bind(this), evtPassivePrm);
-            this._dom.controls.addEventListener('mouseleave', function() {
+            }, window._nyroVideoUtils.evtPassivePrm);
+            this._dom.controls.addEventListener('mouseleave', () => {
                 this._hoverControls = false;
                 this._hideUiTimer();
-            }.bind(this), evtPassivePrm);
-            this._dom.video.addEventListener('click', function(e) {
+            }, window._nyroVideoUtils.evtPassivePrm);
+            this._dom.video.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.toggle();
-            }.bind(this));
+            });
         }
 
         if (controls.indexOf('progress') !== -1) {
@@ -875,7 +896,7 @@ window.NyroVideo = class extends HTMLElement {
             this._dom.subConstrols.progress_load = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressLoad');
             this._dom.subConstrols.progress_read = this._dom.global.querySelectorAll('.nyroVideoProgress .nyroVideoProgressRead');
 
-            const moveProgressBar = function(e, el) {
+            const moveProgressBar = (e, el) => {
                 var duration = this.duration;
                 if (!e || !duration || (e.touches && e.touches.length === 0)) {
                     return;
@@ -899,35 +920,35 @@ window.NyroVideo = class extends HTMLElement {
                 this._forcedCurentTime = duration * pc;
                 this._updateControls('time');
                 this.currentTime = duration * pc;
-            }.bind(this);
-            const moveProgressBarEnd = function() {
+            };
+            const moveProgressBarEnd = () => {
                 this._forcedCurentTime = false;
                 if (!this._progressPaused) {
                     this.play();
                 }
-            }.bind(this);
-            this._dom.subConstrols.progress.forEach(function(el) {
-                el.addEventListener(evtPointerStart, function(e) {
+            };
+            this._dom.subConstrols.progress.forEach((el) => {
+                el.addEventListener(evtPointerStart, (e) => {
                     this._progressPaused = this.paused;
                     if (!this._progressPaused) {
                         this.pause();
                     }
                     moveProgressBar(e, el);
                     this._dom.mousemove = el;
-                    this._dom.content.addEventListener(evtPointerMove, moveProgressBar, evtPassivePrm);
-                    documentClbPointerEnd(function(e) {
+                    this._dom.content.addEventListener(evtPointerMove, moveProgressBar, window._nyroVideoUtils.evtPassivePrm);
+                    window._nyroVideoUtils.documentClbPointerEnd((e) => {
                         this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
                         moveProgressBar(e);
                         moveProgressBarEnd();
-                    }.bind(this));
-                }.bind(this), evtPassivePrm);
-                el.addEventListener(evtPointerEnd, function(e) {
+                    });
+                }, window._nyroVideoUtils.evtPassivePrm);
+                el.addEventListener(evtPointerEnd, (e) => {
                     this._dom.content.removeEventListener(evtPointerMove, moveProgressBar);
                     this._dom.mousemove = false;
                     moveProgressBar(e, el);
                     moveProgressBarEnd();
-                }.bind(this));
-            }.bind(this), evtPassivePrm);
+                });
+            });
         }
 
         if (controls.indexOf('playPause') !== -1) {
@@ -935,20 +956,20 @@ window.NyroVideo = class extends HTMLElement {
             this._dom.subConstrols.playPause_play = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPlay');
             this._dom.subConstrols.playPause_pause = this._dom.global.querySelectorAll('.nyroVideoPlayPause .nyroVideoPause');
 
-            this._dom.subConstrols.playPause_play.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+            this._dom.subConstrols.playPause_play.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.play();
                     this.focus();
-                }.bind(this));
-            }.bind(this));
-            this._dom.subConstrols.playPause_pause.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+                });
+            });
+            this._dom.subConstrols.playPause_pause.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.pause();
                     this.focus();
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         }
 
         if (controls.indexOf('volume') !== -1) {
@@ -958,23 +979,23 @@ window.NyroVideo = class extends HTMLElement {
             this._dom.subConstrols.volume_bar = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeBar');
             this._dom.subConstrols.volume_cursor = this._dom.global.querySelectorAll('.nyroVideoVolume .nyroVideoVolumeCursor');
 
-            this._dom.subConstrols.volume_mute.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+            this._dom.subConstrols.volume_mute.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.muted = true;
                     this.focus();
-                }.bind(this));
-            }.bind(this));
-            this._dom.subConstrols.volume_unmute.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+                });
+            });
+            this._dom.subConstrols.volume_unmute.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.muted = false;
                     this.focus();
-                }.bind(this));
-            }.bind(this));
+                });
+            });
 
-            if (!isTouch) {
-                const moveVolumeBar = function(e, el) {
+            if (!window._nyroVideoUtils.isTouch) {
+                const moveVolumeBar = (e, el) => {
                     if (!e) {
                         return;
                     }
@@ -994,23 +1015,23 @@ window.NyroVideo = class extends HTMLElement {
                     }
                     var pc = offsetX / rect.width;
                     this.volume = pc;
-                }.bind(this);
-                this._dom.subConstrols.volume_bar.forEach(function(el) {
-                    el.addEventListener(evtPointerStart, function(e) {
+                };
+                this._dom.subConstrols.volume_bar.forEach((el) => {
+                    el.addEventListener(evtPointerStart, (e) => {
                         moveVolumeBar(e, el);
                         this._dom.mousemove = el;
-                        this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, evtPassivePrm);
-                        documentClbPointerEnd(function(e) {
+                        this._dom.content.addEventListener(evtPointerMove, moveVolumeBar, window._nyroVideoUtils.evtPassivePrm);
+                        window._nyroVideoUtils.documentClbPointerEnd((e) => {
                             this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
                             moveVolumeBar(e);
-                        }.bind(this));
-                    }.bind(this), evtPassivePrm);
-                    el.addEventListener(evtPointerEnd, function(e) {
+                        });
+                    }, window._nyroVideoUtils.evtPassivePrm);
+                    el.addEventListener(evtPointerEnd, (e) => {
                         this._dom.content.removeEventListener(evtPointerMove, moveVolumeBar);
                         this._dom.mousemove = false;
                         moveVolumeBar(e, el);
-                    }.bind(this));
-                }.bind(this), evtPassivePrm, evtPassivePrm);
+                    });
+                });
             }
 
             this._updateControls('volume');
@@ -1037,28 +1058,28 @@ window.NyroVideo = class extends HTMLElement {
             this._dom.subConstrols.fullscreen_enter = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoEnterFullscreen');
             this._dom.subConstrols.fullscreen_exit = this._dom.global.querySelectorAll('.nyroVideoFullscreen .nyroVideoExitFullscreen');
 
-            this._dom.subConstrols.fullscreen_enter.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+            this._dom.subConstrols.fullscreen_enter.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.fullscreen();
                     this.focus();
-                }.bind(this));
-            }.bind(this));
-            this._dom.subConstrols.fullscreen_exit.forEach(function(el) {
-                el.addEventListener('click', function(e) {
+                });
+            });
+            this._dom.subConstrols.fullscreen_exit.forEach((el) => {
+                el.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.exitFullscreen();
                     this.focus();
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         }
 
         if (controls.indexOf('download') !== -1) {
             this._dom.subConstrols.downloadBut = this._dom.global.querySelectorAll('.nyroVideoDownloadBut');
 
             if (this._dom.subConstrols.downloadBut && this._dom.subConstrols.downloadBut.length) {
-                this._dom.subConstrols.downloadBut.forEach(function(el) {
-                    el.addEventListener('click', function(e) {
+                this._dom.subConstrols.downloadBut.forEach((el) => {
+                    el.addEventListener('click', (e) => {
                         e.preventDefault();
                         if (this._src) {
                             const a = document.createElement('A');
@@ -1072,10 +1093,19 @@ window.NyroVideo = class extends HTMLElement {
                             a.click();
                             document.body.removeChild(a);
                         }
-                    }.bind(this));
-                }.bind(this));
+                    });
+                });
             }
         }
+
+        this.dispatchEvent(new CustomEvent('nyroVideoControlsInited', {
+            bubbles: true,
+            cancelable: true,
+            detail: {
+                controls: controls,
+                dom: this._dom
+            }
+        }));
     }
 
     _onVideoEvt(e) {
@@ -1102,12 +1132,15 @@ window.NyroVideo = class extends HTMLElement {
                 this._updateControls('duration');
                 break;
             case 'timeupdate':
+                this._dom.content.classList.remove('seeking');
                 this._updateControls('time');
                 break;
             case 'progress':
                 this._updateControls('load');
                 break;
             case 'play':
+                this._dom.content.classList.add('seeking');
+                // no break
             case 'pause':
                 this._updateControls('state');
                 break;
@@ -1138,6 +1171,18 @@ window.NyroVideo = class extends HTMLElement {
         this._bubbleEvents = !!value;
     }
 
+    set controlsMaster(master) {
+        if (master && !master.controlsMasterCall) {
+            console.warn('Provided controls master does not implement a controlsMasterCall function', master);
+            master = false;
+        }
+        this._controlsMaster = master;
+    }
+
+    get controlsMaster() {
+        return this._controlsMaster;
+    }
+
     _updateControls(type, clb) {
         if (!this._dom.controls || !this._dom.subConstrols) {
             if (clb) {
@@ -1148,8 +1193,8 @@ window.NyroVideo = class extends HTMLElement {
         switch (type) {
             case 'duration':
                 if (this._dom.subConstrols.duration) {
-                    const durationText = humanTime(this.duration);
-                    this._dom.subConstrols.duration.forEach(function(el) {
+                    const durationText = window._nyroVideoUtils.humanTime(this.duration);
+                    this._dom.subConstrols.duration.forEach((el) => {
                         el.textContent = durationText;
                     });
                 }
@@ -1161,19 +1206,19 @@ window.NyroVideo = class extends HTMLElement {
                     current = this._forcedCurentTime || this.currentTime;
                 if (this._dom.subConstrols.progress_read) {
                     const pcTime = 100 * current / duration;
-                    this._dom.subConstrols.progress_read.forEach(function(el) {
+                    this._dom.subConstrols.progress_read.forEach((el) => {
                         el.style.width = pcTime + '%';
                     });
                 }
                 if (this._dom.subConstrols.currentTime) {
-                    const currentText = humanTime(current);
-                    this._dom.subConstrols.currentTime.forEach(function(el) {
+                    const currentText = window._nyroVideoUtils.humanTime(current);
+                    this._dom.subConstrols.currentTime.forEach((el) => {
                         el.textContent = currentText;
                     });
                 }
                 if (this._dom.subConstrols.remainingTime) {
-                    const remainingText = '-' + humanTime(duration - current);
-                    this._dom.subConstrols.remainingTime.forEach(function(el) {
+                    const remainingText = '-' + window._nyroVideoUtils.humanTime(duration - current);
+                    this._dom.subConstrols.remainingTime.forEach((el) => {
                         el.textContent = remainingText;
                     });
                 }
@@ -1188,7 +1233,7 @@ window.NyroVideo = class extends HTMLElement {
                     }
 
                     var pcLoaded = 100 * loaded / this.duration;
-                    this._dom.subConstrols.progress_load.forEach(function(el) {
+                    this._dom.subConstrols.progress_load.forEach((el) => {
                         el.style.width = pcLoaded + '%';
                     });
                 }
@@ -1215,7 +1260,7 @@ window.NyroVideo = class extends HTMLElement {
                         this._dom.global.classList.remove('volume-low');
                     }
                     if (this._dom.subConstrols.volume_cursor) {
-                        this._dom.subConstrols.volume_cursor.forEach(function(el) {
+                        this._dom.subConstrols.volume_cursor.forEach((el) => {
                             el.style.width = (volume * 100) + '%';
                         });
                     }
@@ -1233,26 +1278,26 @@ window.NyroVideo = class extends HTMLElement {
             if (Hls.isSupported()) {
                 this._canPlay = true;
                 this._hls = new Hls();
-                this._hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                this._hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     if (!this._dom.subConstrols.quality) {
                         return;
                     }
                     if (this._hls.levels.length > 1) {
                         let lines = [];
                         lines.push('<li><button data-index="-1" class="selected">auto</button></li>');
-                        this._hls.levels.forEach(function(level, idx) {
+                        this._hls.levels.forEach((level, idx) => {
                             lines.push('<li><button data-index="' + idx + '">' + level.name + '</button></li>');
                         });
                         let html = '<ul>' + lines.reverse().join('') + '</ul>';
                         html += '<strong>auto</strong>';
-                        this._dom.subConstrols.quality.forEach(function(el) {
+                        this._dom.subConstrols.quality.forEach((el) => {
                             el.innerHTML = html;
                         });
                         this._dom.subConstrols.quality_display = this._dom.global.querySelectorAll('.nyroVideoQuality strong');
                         this._dom.subConstrols.quality_buttons = this._dom.global.querySelectorAll('.nyroVideoQuality button');
 
-                        this._dom.subConstrols.quality_buttons.forEach(function(el) {
-                            el.addEventListener('click', function(e) {
+                        this._dom.subConstrols.quality_buttons.forEach((el) => {
+                            el.addEventListener('click', (e) => {
                                 this.focus();
                                 if (!this._hls) {
                                     return;
@@ -1265,7 +1310,7 @@ window.NyroVideo = class extends HTMLElement {
                                 this._hls.currentLevel = newLevel;
 
                                 if (this._dom.subConstrols.quality_buttons) {
-                                    this._dom.subConstrols.quality_buttons.forEach(function(but) {
+                                    this._dom.subConstrols.quality_buttons.forEach((but) => {
                                         if (but === el) {
                                             but.classList.add('selected');
                                         } else {
@@ -1274,23 +1319,22 @@ window.NyroVideo = class extends HTMLElement {
                                     });
                                 }
                                 if (this._dom.subConstrols.quality_display) {
-                                    this._dom.subConstrols.quality_display.forEach(function(display) {
+                                    this._dom.subConstrols.quality_display.forEach((display) => {
                                         display.textContent = el.textContent;
                                     });
                                 }
 
-                            }.bind(this));
-                        }.bind(this));
-
+                            });
+                        });
                     } else {
-                        this._dom.subConstrols.quality.forEach(function(el) {
+                        this._dom.subConstrols.quality.forEach((el) => {
                             el.style.display = 'none';
                         });
                     }
-                }.bind(this));
-                this._hls.on(Hls.Events.LEVEL_SWITCHED, function(level, data) {
+                });
+                this._hls.on(Hls.Events.LEVEL_SWITCHED, (level, data) => {
                     if (this._dom.subConstrols.quality_buttons) {
-                        this._dom.subConstrols.quality_buttons.forEach(function(el) {
+                        this._dom.subConstrols.quality_buttons.forEach((el) => {
                             if (el.dataset.index == data.level) {
                                 el.classList.add('using');
                             } else {
@@ -1298,12 +1342,11 @@ window.NyroVideo = class extends HTMLElement {
                             }
                         });
                     }
-                }.bind(this));
+                });
                 this._hls.loadSource(this._src);
                 this._hls.attachMedia(this._dom.video);
 
                 this._tryAutoPlay();
-
             } else if (canPlayNativeHls) {
                 this._dom.video.src = this._src;
             } else {
@@ -1317,19 +1360,19 @@ window.NyroVideo = class extends HTMLElement {
 
             this._ima3.loader.addEventListener(
                 google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
-                function(adsManagerLoadedEvent) {
+                (adsManagerLoadedEvent) => {
                     // Get the ads manager.
                     this._ima3.renderingSettings = new google.ima.AdsRenderingSettings();
                     this._ima3.renderingSettings.restoreCustomPlaybackStateOnAdBreakComplete = true;
 
                     // Preloading give some error on mobile
-                    this._ima3.renderingSettings.enablePreloading = !isTouch;
+                    this._ima3.renderingSettings.enablePreloading = !window._nyroVideoUtils.isTouch;
 
                     this._ima3.manager = adsManagerLoadedEvent.getAdsManager(this._dom.video, this._ima3.renderingSettings);
 
-                    addResizeClb(function() {
+                    window._nyroVideoUtils.resize.addClb(() => {
                         this._resizeIma3();
-                    }.bind(this));
+                    });
 
                     // Add listeners to the required events.
                     this._ima3.manager.addEventListener(
@@ -1362,8 +1405,7 @@ window.NyroVideo = class extends HTMLElement {
                     } else {
                         this._tryAutoPlay();
                     }
-
-                }.bind(this),
+                },
                 false);
 
             this._ima3.loader.addEventListener(
@@ -1454,10 +1496,10 @@ window.NyroVideo = class extends HTMLElement {
                     // For a linear ad, a timer can be started to poll for
                     // the remaining time.
                     this._ima3.intervalTimer = setInterval(
-                        function() {
+                        () => {
                             var remainingTime = this._ima3.manager.getRemainingTime();
                             // @todo show it
-                        }.bind(this),
+                        },
                         300); // every 300ms
                     this._ima3.playing = true;
                 }
@@ -1486,7 +1528,7 @@ window.NyroVideo = class extends HTMLElement {
         this._autoplay = false; // to be sure to come only once here
 
         this._dom.video.play()
-            .then(function() {
+            .then(() => {
                 // Play on current state
 
                 this._dom.video.pause();
@@ -1499,14 +1541,14 @@ window.NyroVideo = class extends HTMLElement {
                 } else {
                     this.play();
                 }
-            }.bind(this))
-            .catch(function() {
+            })
+            .catch(() => {
                 // Autoplay did not work, try as muted if not set
                 if (!this.muted) {
                     this.volume = 0;
                     this.muted = true;
                     this._dom.video.play()
-                        .then(function() {
+                        .then(() => {
                             // autoplay work as muted
                             this._dom.video.pause();
                             this._dom.video.currentTime = 0;
@@ -1519,13 +1561,12 @@ window.NyroVideo = class extends HTMLElement {
                             } else {
                                 this.play();
                             }
-                        }.bind(this))
-                        .catch(function() {
+                        })
+                        .catch(() => {
 
-                        }.bind(this));
+                        });
                 }
-            }.bind(this));
-
+            });
     }
     play() {
         if (this._ima3) {
@@ -1564,7 +1605,11 @@ window.NyroVideo = class extends HTMLElement {
     }
 
     fullscreen() {
-        if (this._fullscreened || !canFullScreen) {
+        if (this.controlsMaster && !this.controlsMaster.controlsMasterCall(this, 'fullscreen')) {
+            return;
+        }
+
+        if (this._fullscreened || !window._nyroVideoUtils.fullscreen.can) {
             return;
         }
 
@@ -1575,18 +1620,22 @@ window.NyroVideo = class extends HTMLElement {
         this.style.width = '100%';
         this.style.height = '100%';
 
-        this._fullscreened = makeFullScreen(this);
+        this._fullscreened = window._nyroVideoUtils.fullscreen.make(this);
 
         this.focus();
         this._resizeIma3();
     }
 
     exitFullscreen() {
+        if (this.controlsMaster && !this.controlsMaster.controlsMasterCall(this, 'exitFullscreen')) {
+            return;
+        }
+
         if (!this._fullscreened) {
             return;
         }
 
-        this._fullscreened = makeFullScreen(this);
+        this._fullscreened = window._nyroVideoUtils.fullscreen.make(this);
 
         this.style.width = this._previousFullscreened.width;
         this.style.height = this._previousFullscreened.height;
@@ -1604,9 +1653,9 @@ window.NyroVideo = class extends HTMLElement {
                 currentTime -= 5;
                 this.currentTime = Math.max(0, currentTime);
                 this._forcedCurentTime = this.currentTime;
-                this._updateControls('time', function() {
+                this._updateControls('time', () => {
                     this._forcedCurentTime = false;
-                }.bind(this));
+                });
                 this._showUiTimer();
                 return;
             case 39:
@@ -1615,9 +1664,9 @@ window.NyroVideo = class extends HTMLElement {
                 currentTime += 5;
                 this.currentTime = Math.min(this.duration, currentTime);
                 this._forcedCurentTime = this.currentTime;
-                this._updateControls('time', function() {
+                this._updateControls('time', () => {
                     this._forcedCurentTime = false;
-                }.bind(this));
+                });
                 this._showUiTimer();
                 return;
             case 38:
@@ -1635,7 +1684,6 @@ window.NyroVideo = class extends HTMLElement {
                 this._showUiTimer();
                 return;
         }
-
 
         switch (e.key) {
             case ' ':
@@ -1660,15 +1708,15 @@ window.NyroVideo = class extends HTMLElement {
 
     _resizeIma3() {
         if (this._ima3 && this._ima3.manager) {
-            requestAnimationFrame(function() {
+            requestAnimationFrame(() => {
                 this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, this._fullscreened ? google.ima.ViewMode.FULLSCREEN : google.ima.ViewMode.NORMAL);
-                if (isTouch && this._fullscreened) {
+                if (window._nyroVideoUtils.isTouch && this._fullscreened) {
                     // In some case, when nav bar disappear, we have to wait a little bit more
-                    setTimeout(function() {
+                    setTimeout(() => {
                         this._ima3.manager.resize(this.offsetWidth, this.offsetHeight, google.ima.ViewMode.FULLSCREEN);
-                    }.bind(this), 100);
+                    }, 100);
                 }
-            }.bind(this));
+            });
         }
     }
 
@@ -1738,6 +1786,10 @@ window.NyroVideo = class extends HTMLElement {
 
     get volume() {
         return this._dom.video.volume;
+    }
+
+    get fullscreened() {
+        return this._fullscreened;
     }
 }
 
