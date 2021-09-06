@@ -1,4 +1,3 @@
-
 const headDom = document.querySelector('head');
 
 let templateFullyInserted = false;
@@ -7,6 +6,7 @@ const templateOnce = document.createElement('template');
 templateOnce.innerHTML = `<style>
 nyro-videoplsitem {
     display: none;
+    height: 100%;
 }
 nyro-videoplsitem.active {
     display: block;
