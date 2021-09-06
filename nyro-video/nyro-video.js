@@ -223,6 +223,7 @@ nyro-video {
     background: linear-gradient(to bottom, rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 );
     transition: transform 300ms;
+    transform: translate3d(0, 0, 0);
 }
 .hideUi .nyroVideoControls {
     transform: translate(0, 100%);
@@ -694,22 +695,11 @@ window.NyroVideo = class extends HTMLElement {
 
         this._ads = this.getAttribute('ads');
 
-        if (true || this._ads) {
-            // Ads is not supported in shadow DOM, add insertOnce element
-            // @see https://groups.google.com/forum/?hl=en-us#!topic/ima-sdk/OnwP__Od1UM
-            // Never use Shadow DOM because of ads bug and Safaris SVG bug
-            if (!templateFullyInserted) {
-                headDom.insertBefore(document.importNode(templateOnce.content, true), headDom.firstChild);
-                templateFullyInserted = true;
-            }
-            this.appendChild(clone);
-        } else {
-            this._shadow = this.attachShadow({
-                mode: 'open'
-            });
-            this._shadow.appendChild(document.importNode(templateOnce.content, true));
-            this._shadow.appendChild(clone);
-        }
+        this._shadow = this.attachShadow({
+            mode: 'open'
+        });
+        this._shadow.appendChild(document.importNode(templateOnce.content, true));
+        this._shadow.appendChild(clone);
 
         if (this.hasAttribute('controls')) {
             this._initControls(this.getAttribute('controls'));
@@ -1422,10 +1412,10 @@ window.NyroVideo = class extends HTMLElement {
             this._ima3.request.nonLinearAdSlotWidth = this.offsetWidth;
             this._ima3.request.nonLinearAdSlotHeight = 150;
 
+            this._ima3.loader.requestAds(this._ima3.request);
+
             if (this._autoplay) {
                 this._tryAutoPlay();
-            } else {
-                this._ima3.loader.requestAds(this._ima3.request);
             }
         }
     }
@@ -1492,7 +1482,6 @@ window.NyroVideo = class extends HTMLElement {
                 // can adjust the UI, for example display a pause button and
                 // remaining time.
                 if (ad.isLinear()) {
-
                     // For a linear ad, a timer can be started to poll for
                     // the remaining time.
                     this._ima3.intervalTimer = setInterval(
@@ -1537,7 +1526,6 @@ window.NyroVideo = class extends HTMLElement {
                     this._autplayOnAdLoad = true;
                     this._ima3.request.setAdWillAutoPlay(true);
                     this._ima3.request.setAdWillPlayMuted(this.muted);
-                    this._ima3.loader.requestAds(this._ima3.request);
                 } else {
                     this.play();
                 }
@@ -1557,7 +1545,6 @@ window.NyroVideo = class extends HTMLElement {
                                 this._autplayOnAdLoad = true;
                                 this._ima3.request.setAdWillAutoPlay(true);
                                 this._ima3.request.setAdWillPlayMuted(true);
-                                this._ima3.loader.requestAds(this._ima3.request);
                             } else {
                                 this.play();
                             }
@@ -1568,6 +1555,7 @@ window.NyroVideo = class extends HTMLElement {
                 }
             });
     }
+
     play() {
         if (this._ima3) {
             if (this._ima3.playing) {
