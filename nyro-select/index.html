@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <title>Test select</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script type="module" src="nyro-select.js"></script>
+</head>
+<body>
+  <form action="" method="POST">
+    <label for="text">Text</label>
+    <input type="text" id="text" name="text" required value="hhh" />
+    <hr />
+    <label for="sel">Select</label>
+    <select id="sel" name="sel" required>
+      <option value="">Choose</option>
+      <option value="sel1">Sel 1</option>
+      <option value="sel2">Sel 2</option>
+      <option value="sel3" selected>Sel 3</option>
+      <option value="sel4">Sel 4</option>
+    </select>
+    <hr />
+    <label for="mysel">Select</label>
+    <nyro-select id="mysel" name="mysel" required>
+      <nyro-select-option>-- Please choose an option --</nyro-select-option>
+      <nyro-select-option value="dog">Dog</nyro-select-option>
+      <nyro-select-option value="cat">Cat</nyro-select-option>
+      <nyro-select-option value="hamster">Hamster</nyro-select-option>
+      <nyro-select-option value="parrot">Parrot</nyro-select-option>
+      <nyro-select-option value="spider">Spider</nyro-select-option>
+      <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
+    </nyro-select>
+    <hr />
+    <label for="mysel2">Select</label>
+    <nyro-select id="mysel2" name="mysel2" required placeholder="Please choose an option">
+      <nyro-select-option value="">--Please choose an option--</nyro-select-option>
+      <nyro-select-option value="dog">Dog</nyro-select-option>
+      <nyro-select-option value="cat">Cat</nyro-select-option>
+      <nyro-select-option value="hamster">Hamster</nyro-select-option>
+      <nyro-select-option value="parrot">Parrot</nyro-select-option>
+      <nyro-select-option value="spider">Spider</nyro-select-option>
+      <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
+    </nyro-select>
+    <hr />
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
