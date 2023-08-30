@@ -109,7 +109,7 @@ template.innerHTML = `
     font-family: "Arial";
     color: #000;
     background: #fff;
-    border: 1px solid #000;
+    border: 1px solid #767676;
     border-radius: 2px;
     padding: 1px 2px;
 }
@@ -148,7 +148,7 @@ template.innerHTML = `
     box-sizing: border-box;
 
     background: var(--nyro-select-dropdown-background, #fff);
-    border: var(--nyro-select-dropdown-border, 1px solid #000);
+    border: var(--nyro-select-dropdown-border, 1px solid #767676);
     border-radius: var(--nyro-select-dropdown-border-radius, 2px);
     box-shadow: var(--nyro-select-dropdown-box-shadow, 0 3px 10px 0 rgba(0, 0, 0, 0.3));
 
