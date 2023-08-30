@@ -153,6 +153,7 @@ template.innerHTML = `
     box-shadow: var(--nyro-select-dropdown-box-shadow, 0 3px 10px 0 rgba(0, 0, 0, 0.3));
 
     max-width: var(--nyro-select-dropdown-max-width, 50vw);
+    max-height: var(--nyro-select-dropdown-max-height, min(27em, 40vh));
 
     z-index: var(--nyro-select-dropdown-z-index, 9999);
 
@@ -268,6 +269,10 @@ class NyroSelect extends HTMLElement {
             this.focused = true;
             this._filter();
             this._positionDropdown();
+            const currentSelected = this.querySelector('nyro-select-option[selected]');
+            if (currentSelected) {
+                this._scrollIntoView(currentSelected);
+            }
         });
 
         this._dropdown.addEventListener('click', (e) => {
@@ -371,11 +376,7 @@ class NyroSelect extends HTMLElement {
             if (direction === 1) {
                 // focus it directly, this is the first arrow down
                 currentlyFocused.focused = true;
-                currentlyFocused.scrollIntoView({
-                    block: 'center',
-                    inline: 'center',
-                    behavior: 'smooth'
-                });
+                this._scrollIntoView(currentlyFocused);
                 return;
             }
         }
@@ -415,11 +416,7 @@ class NyroSelect extends HTMLElement {
         if (newFocused && newFocused != currentlyFocused) {
             currentlyFocused.focused = false;
             newFocused.focused = true;
-            newFocused.scrollIntoView({
-                block: 'center',
-                inline: 'center',
-                behavior: 'smooth'
-            });
+            this._scrollIntoView(newFocused);
         }
     }
 
@@ -432,6 +429,14 @@ class NyroSelect extends HTMLElement {
         currentlyFocused.dispatchEvent(new Event('click', {
             bubbles: true
         }));
+    }
+
+    _scrollIntoView(option, direct) {
+        option.scrollIntoView({
+            block: 'center',
+            inline: 'center',
+            behavior: 'instant'
+        });
     }
 
     _setValidity() {
