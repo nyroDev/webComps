@@ -100,6 +100,7 @@ const template = document.createElement('template');
 template.innerHTML = `
 <style>
 :host {
+    --nyro-select-search-font-size: 14px;
     --nyro-select-arrow-width: 2px;
     --nyro-select-arrow-color: currentColor;
 
@@ -131,6 +132,7 @@ template.innerHTML = `
 #search {
     width: 100%;
     font-family: inherit;
+    font-size: var(--nyro-select-search-font-size);
     border: none;
     padding: 0;
     outline: none;
@@ -168,6 +170,11 @@ template.innerHTML = `
 :host([focused]) .dropdown {
     opacity: 1;
     visibility: visible;
+}
+@supports (-webkit-touch-callout: none) {
+    #search {
+        font-size: calc(max(var(--nyro-select-search-font-size), 16px));
+    }
 }
 </style>
 <input id="search" type="search" />
@@ -229,6 +236,9 @@ class NyroSelect extends HTMLElement {
         this._dropdown = this.shadowRoot.querySelector('.dropdown');
 
         this.addEventListener('focus', (e) => {
+            if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
+                return;
+            }
             this._search.focus();
         });
 
@@ -456,6 +466,10 @@ class NyroSelect extends HTMLElement {
 
     reportValidity() {
         return this._internals.reportValidity();
+    }
+
+    setValidity(flags, message, anchor) {
+        return this._internals.setValidity(flags, message, anchor);
     }
 
     get form() {
