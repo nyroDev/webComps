@@ -345,11 +345,13 @@ class NyroSelect extends HTMLElement {
 
         if (option && option !== this._defaultOption) {
             this._value = option.value;
+            this.setAttribute('value', this._value);
             option.selected = true;
             this._search.value = option.label;
             this._internals.setFormValue(option.value);
         } else {
             this._value = undefined;
+            this.removeAttribute('value');
             this._internals.setFormValue('');
         }
         this._setValidity();
@@ -434,6 +436,8 @@ class NyroSelect extends HTMLElement {
     _selectFocused() {
         const currentlyFocused = this.querySelector('nyro-select-option[focused]:not([hidden])');
         if (!currentlyFocused) {
+            this._setOptionSelect();
+            this.focused = false;
             return;
         }
 
@@ -454,7 +458,7 @@ class NyroSelect extends HTMLElement {
         if (this.required && (this._value === undefined || this._value === '')) {
             this._internals.setValidity({
                 valueMissing: true
-            }, valueMissingMessage);
+            }, valueMissingMessage, this._search);
         } else {
             this._internals.setValidity({});
         }
@@ -469,7 +473,7 @@ class NyroSelect extends HTMLElement {
     }
 
     setValidity(flags, message, anchor) {
-        return this._internals.setValidity(flags, message, anchor);
+        return this._internals.setValidity(flags, message, anchor || this._search);
     }
 
     get form() {
