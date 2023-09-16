@@ -250,6 +250,19 @@ class NyroSelect extends HTMLElement {
             }
         });
 
+        this.addEventListener('click', (e) => {
+            if (this.focused || e.defaultPrevented) {
+                return;
+            }
+            // Reset validity to hide native error message
+            this._internals.setValidity({});
+            this.focused = true;
+            setTimeout(() => {
+                // Re-evaluate validity value later
+                this._setValidity();
+            }, 150);
+        });
+
         this._search.addEventListener('input', () => {
             this._filter();
         });
@@ -275,7 +288,10 @@ class NyroSelect extends HTMLElement {
             }
         });
 
-        this._search.addEventListener('focus', () => {
+        this._search.addEventListener('focus', (e) => {
+            if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
+                return;
+            }
             this._search.value = '';
             this.focused = true;
             this._filter();
@@ -299,7 +315,7 @@ class NyroSelect extends HTMLElement {
 
         this._defaultOption = this.querySelector('nyro-select-option[value=""], nyro-select-option:not([value])');
         if (this._defaultOption) {
-            this._defaultOption.hidden = true;
+            //this._defaultOption.hidden = true;
         }
         this._search.placeholder = this.hasAttribute('placeholder') ? this.getAttribute('placeholder') : (this._defaultOption ? this._defaultOption.label : '');
 
@@ -343,6 +359,8 @@ class NyroSelect extends HTMLElement {
             option.focused = false;
         }
 
+        this._search.blur();
+
         if (option && option !== this._defaultOption) {
             this._value = option.value;
             this.setAttribute('value', this._value);
@@ -368,9 +386,6 @@ class NyroSelect extends HTMLElement {
     _filter() {
         let searchVal = normalizeText(this._search.value);
         this.querySelectorAll('nyro-select-option').forEach(option => {
-            if (option === this._defaultOption) {
-                return;
-            }
             const matching = searchVal.length ? normalizeText(option.label).indexOf(searchVal) !== -1 : true;
             option.hidden = !matching;
             if (!matching && option.focused) {
@@ -441,9 +456,7 @@ class NyroSelect extends HTMLElement {
             return;
         }
 
-        currentlyFocused.dispatchEvent(new Event('click', {
-            bubbles: true
-        }));
+        this._setOptionSelect(currentlyFocused);
     }
 
     _scrollIntoView(option, direct) {
