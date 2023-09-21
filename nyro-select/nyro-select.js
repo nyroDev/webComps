@@ -243,10 +243,10 @@ class NyroSelect extends HTMLElement {
         });
         this.shadowRoot.append(template.content.cloneNode(true));
 
-        const insideSlot = this.querySelector('style[slot="insideSlot"]');
-        if (insideSlot) {
-            this.shadowRoot.querySelector('style').textContent += insideSlot.textContent;
-            insideSlot.remove();
+        const insideStyle = this.querySelector('style[slot="insideStyle"]');
+        if (insideStyle) {
+            this.shadowRoot.querySelector('style').textContent += insideStyle.textContent;
+            insideStyle.remove();
         }
 
         if (!this.hasAttribute('tabindex')) {
