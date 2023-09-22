@@ -395,6 +395,13 @@ class NyroSelect extends HTMLElement {
             this._internals.setFormValue('');
         }
         this._setValidity();
+
+        if (!ignoreUnselect) {
+            this.dispatchEvent(new Event('change', {
+                bubbles: true,
+                cancelable: true,
+            }));
+        }
     }
 
     _positionDropdown() {
