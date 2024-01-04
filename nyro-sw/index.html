@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test SW installer</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script type="module" src="nyro-sw.js"></script>
+
+    <style>
+        nyro-sw {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+        nyro-sw a {
+            display: inline-block;
+            margin: 0 10px 10px 10px;
+            background: #000;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+    </style>
+  </head>
+  <body>
+    <nyro-sw url="sw.js"></nyro-sw>
+  </body>
+</html>
