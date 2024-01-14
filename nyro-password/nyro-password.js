@@ -1,8 +1,8 @@
 const valueMissingMessage = (() => {
-    let select = document.createElement('input');
-    select.required = true;
+    const input = document.createElement('input');
+    input.required = true;
 
-    return select.validationMessage;
+    return input.validationMessage;
 })();
 
 const template = document.createElement('template');
@@ -101,13 +101,16 @@ class NyroPassword extends HTMLElement {
     static get observedAttributes() {
         return [
             'required',
+            'placeholder',
             'show'
         ];
     }
 
     attributeChangedCallback(name, prev, next) {
         if (name === 'required') {
-            this._setValidity();
+            this._setMyValidity();
+        } else if (name === 'placeholder') {
+            this.placeholder = next;
         } else if (name === 'show') {
             this._toggle();
         }
@@ -119,15 +122,7 @@ class NyroPassword extends HTMLElement {
         });
         this.shadowRoot.append(template.content.cloneNode(true));
 
-        if (!this.hasAttribute('tabindex')) {
-            this.setAttribute('tabindex', '0');
-        }
-
         this._input = this.shadowRoot.querySelector('input');
-
-        if (this.hasAttribute('placeholder')) {
-            this._input.placeholder = this.getAttribute('placeholder');
-        }
 
         this._input.addEventListener('input', () => {
             this._setValue();
@@ -151,15 +146,15 @@ class NyroPassword extends HTMLElement {
             }
         });
 
+        if (!this.hasAttribute('tabindex')) {
+            this.setAttribute('tabindex', '0');
+        }
+
         this.addEventListener('focus', (e) => {
             if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
                 return;
             }
             this._input.focus();
-        });
-
-        this.addEventListener('blur', () => {
-            this.focused = false;
         });
 
         if (this._internals.form) {
@@ -168,19 +163,13 @@ class NyroPassword extends HTMLElement {
             });
         }
 
-        this._setValidity();
-    }
-
-    get focused() {
-        return this.hasAttribute('focused');
-    }
-
-    set focused(focused) {
-        if (focused) {
-            this.setAttribute('focused', '');
-        } else {
-            this.removeAttribute('focused');
+        if (this.hasAttribute('value')) {
+            this.value = this.getAttribute('value');
         }
+        if (this.hasAttribute('placeholder')) {
+            this.placeholder = this.getAttribute('placeholder');
+        }
+        this._setMyValidity();
     }
 
     get show() {
@@ -207,6 +196,16 @@ class NyroPassword extends HTMLElement {
         }
     }
 
+    get placeholder() {
+        return this._input.placeholder;
+    }
+
+    set placeholder(placeholder) {
+        if (this._input) {
+            this._input.placeholder = placeholder;
+        }
+    }
+
     get value() {
         return this._input.value;
     }
@@ -218,20 +217,16 @@ class NyroPassword extends HTMLElement {
 
     _setValue() {
         this._internals.setFormValue(this._input.value);
-        this._setValidity();
+        this._setMyValidity();
     }
 
-    _toggle() {
-        this._input.type = this.show ? 'text' : 'password';
-    }
-
-    _setValidity() {
+    _setMyValidity() {
         if (this.required && this._input && !this._input.value) {
-            this._internals.setValidity({
+            this.setValidity({
                 valueMissing: true
             }, valueMissingMessage, this._input);
         } else {
-            this._internals.setValidity({});
+            this.setValidity({});
         }
     }
 
