@@ -112,7 +112,7 @@ class NyroPassword extends HTMLElement {
         } else if (name === 'placeholder') {
             this.placeholder = next;
         } else if (name === 'show') {
-            this._toggle();
+            this._setType();
         }
     }
 
@@ -213,6 +213,10 @@ class NyroPassword extends HTMLElement {
     set value(value) {
         this._input.value = value;
         this._setValue();
+    }
+
+    _setType() {
+        this._input.type = this.show ? 'text' : 'password';
     }
 
     _setValue() {
