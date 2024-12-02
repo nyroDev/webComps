@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <title>Test nyro-upload</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script type="module" src="nyro-upload.js?20241222"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+  <style>
+    nyro-upload.styled {
+      outline: none;
+        --nyro-upload-font-size: 16px;
+      --nyro-upload-font-family: 'Roboto', sans-serif;
+      --nyro-upload-color: #f5f9ffe6;
+      --nyro-upload-background-color: #26292b;
+
+      --nyro-upload-color-hover: var(--nyro-upload-color);
+      --nyro-upload-background-color-hover: #323847;
+
+      --nyro-upload-border: none;
+      --nyro-upload-border-radius: 4px;
+      --nyro-upload-border-padding: 6px 8px;
+
+      --nyro-upload-file-retry-color: #737373;
+      --nyro-upload-file-error-color: #f43f5e;
+      --nyro-upload-file-error-color-text: #fff;
+    }
+    nyro-upload.styled nyro-upload-file {
+      --nyro-upload-font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <nyro-upload
+    multiple
+    url="uploadUri"
+    text="Fichier..."
+    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"
+  ></nyro-upload>
+  <nyro-upload
+    class="styled"
+    multiple
+    url="uploadUri"
+    text="Fichier..."
+    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"
+  ></nyro-upload>
+  <script>
+    const ups = document.querySelectorAll('nyro-upload');
+    ups.forEach(up => {
+      up.addEventListener('uploadEnded', (e) => {
+        console.log(e.detail);
+        setTimeout(() => {
+          console.log('clearing done');
+          up.clearDone();
+        }, 2000);
+      });
+    });
+  </script>
+  <br />
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-upload" target="_blank">Github</a>
+</body>
+</html>
