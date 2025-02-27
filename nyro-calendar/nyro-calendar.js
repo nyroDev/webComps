@@ -2,21 +2,40 @@ const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
+    --nyro-calendar-font-family: "Arial";
     --nyro-calendar-text-color: #000000;
     --nyro-calendar-background-color: #ffffff;
+    --nyro-calendar-cell-padding: 1px;
+    --nyro-calendar-cell-height: 1.5em;
+
+    --nyro-calendar-otherDay-text-color: #ccc;
+    --nyro-calendar-outOfrange-text-color: var(--nyro-calendar-otherDay-text-color);
+    --nyro-calendar-empty-text-color: #ccc;
+
+    --nyro-calendar-days-font-family: var(--nyro-calendar-font-family);
+    --nyro-calendar-link-color: #0b1cff;
+
+    --nyro-calendar-dayNames-text-color: var(--nyro-calendar-otherDay-text-color);
+    --nyro-calendar-header-padding: 4px 2px 2px;
+    --nyro-calendar-header-border: none; 1px solid var(--nyro-calendar-text-color);
+
+    --nyro-calendar-days-border: none; 1px solid var(--nyro-calendar-text-color);
 
     position: relative;
     display: inline-block;
-    font-size: 0.8em;
-    font-family: "Arial";
+    font-family: var(--nyro-calendar-font-family);
     color: var(--nyro-calendar-text-color);
     background: var(--nyro-calendar-background-color);
     border: 1px solid #767676;
     border-radius: 2px;
-    padding: 1px 2px;
 }
-:host a {
+a {
+    color: var(--nyro-calendar-link-color);
+    text-decoration: none;
+}
+:host([readonly]) header a {
     color: var(--nyro-calendar-text-color);
+    pointer-events: none;
 }
 :host([readonly]) header nav {
     display: none;
@@ -25,9 +44,49 @@ header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: var(--nyro-calendar-header-padding);
+    border-bottom: var(--nyro-calendar-header-border);
 }
-table {
-    text-align: center;
+header.cannotPrevMonth .prevMonth,
+header.cannotNextMonth .nextMonth,
+.chooseMonth .cannot,
+.chooseYear .cannot {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+main section {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+main section > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--nyro-calendar-cell-height);
+    height: var(--nyro-calendar-cell-height);
+    padding: var(--nyro-calendar-cell-padding);
+}
+
+#dayNames {
+    font-size: 80%;
+    color: var(--nyro-calendar-dayNames-text-color);
+    border-bottom: var(--nyro-calendar-header-border);
+}
+#days {
+    font-family: var(--nyro-calendar-days-font-family);
+}
+.empty {
+    color: var(--nyro-calendar-empty-text-color);
+}
+.otherDay {
+    color: var(--nyro-calendar-otherDay-text-color);
+}
+.day_out_of_range {
+    color: var(--nyro-calendar-outOfrange-text-color);
+}
+.today {
+    font-weight: bold;
 }
 
 .chooseMonth,
@@ -59,25 +118,45 @@ table {
 </style>
 <header>
     <div>
-        <span class="curMonth"></span>
-        <span class="curYear"></span>
+        <a href="#" class="curMonth"></a>
+        <a href="#" class="curYear"></a>
     </div>
     <nav>
         <a href="#" class="prevMonth" tabindex="-1">&lt;</a>
         <a href="#" class="nextMonth" tabindex="-1">&gt;</a>
     </nav>
 </header>
-<table>
-    <thead>
-        <tr></tr>
-    </thead>
-    <tbody>
-    </tbody>
-</table>
+<main>
+    <section id="dayNames"></section>
+    <section id="days"></section>
+</main>
 `;
 
 const formatDate = (date) => {
     return date.getFullYear() + "-" + (date.getMonth() + 1 + "").padStart(2, "0") + "-" + (date.getDate() + "").padStart(2, "0");
+};
+
+const formatMonth = (date) => {
+    return date.getFullYear() + "-" + (date.getMonth() + 1 + "").padStart(2, "0");
+};
+
+const calcRespectingMinMaxDate = (date, minDate, maxDate) => {
+    let useDate = date;
+    if (minDate && minDate > useDate) {
+        useDate = minDate;
+    }
+    if (maxDate && maxDate < useDate) {
+        useDate = maxDate;
+    }
+
+    return useDate;
+};
+
+const standardizeDate = (date) => {
+    date.setHours(12);
+    date.setMinutes(0);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
 };
 
 const monthFormatter = new Intl.DateTimeFormat(undefined, { month: "long" });
@@ -105,6 +184,9 @@ const nameDays = [];
 })();
 
 const intlToday = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(0, "day");
+
+const today = new Date();
+standardizeDate(today);
 
 let tplChooseMonth;
 const createChooseMonth = () => {
@@ -156,28 +238,71 @@ const createChooseYear = () => {
 
 class NyroCalendar extends HTMLElement {
     static get observedAttributes() {
-        return ["date", "other-days"];
+        return ["month", "other-days", "first-day-of-week", "fixed-weeks", "min-date", "max-date"];
     }
 
     attributeChangedCallback(name, prev, next) {
         if (!this._inited) {
             return;
         }
-        if (name === "date") {
-            this._readDateAttribute();
+        if (name === "month") {
+            this._readMonthAttribute();
+            this._write();
+            this.dispatchEvent(
+                new CustomEvent("changedMonth", {
+                    bubbles: true,
+                    cancelable: true,
+                    detail: this.month,
+                })
+            );
+        } else if (name === "first-day-of-week") {
+            this._writeDays();
             this._write();
         } else if (name === "other-days") {
             this._write();
+        } else if (name === "fixed-weeks") {
+            this._write();
+        } else if (name === "min-date") {
+            this._readMinDateAttribute();
+            if ((prev && prev.substring(0, 7) === this.month) || (this._minDate && formatMonth(this._minDate) == this.month)) {
+                this._write();
+            }
+        } else if (name === "max-date") {
+            this._readMaxDateAttribute();
+            if ((prev && prev.substring(0, 7) === this.month) || (this._maxDate && formatMonth(this._maxDate) == this.month)) {
+                this._write();
+            }
         }
     }
 
-    get date() {
-        return this._date;
+    get month() {
+        return formatMonth(this._month);
     }
 
-    set date(date) {
-        if (date instanceof Date) {
-            this.setAttribute("date", formatDate(date));
+    set month(month) {
+        this.setAttribute("month", month);
+    }
+
+    get monthDate() {
+        return new Date(this._month.getTime());
+    }
+
+    set monthDate(monthDate) {
+        if (monthDate instanceof Date) {
+            this.setAttribute("month", formatMonth(calcRespectingMinMaxDate(monthDate, this._minDate, this._maxDate)));
+        }
+    }
+
+    // 0 for Sunday, 1 for Monday
+    get firstDayOfWeek() {
+        return this.hasAttribute("first-day-of-week") ? parseInt(this.getAttribute("first-day-of-week")) : 1;
+    }
+
+    set firstDayOfWeek(firstDayOfWeek) {
+        if (firstDayOfWeek !== undefined) {
+            this.setAttribute("first-day-of-week", parseInt(firstDayOfWeek));
+        } else {
+            this.removeAttribute("first-day-of-week");
         }
     }
 
@@ -190,6 +315,42 @@ class NyroCalendar extends HTMLElement {
             this.setAttribute("other-days", "");
         } else {
             this.removeAttribute("other-days");
+        }
+    }
+
+    get fixedWeeks() {
+        return this.hasAttribute("fixed-weeks");
+    }
+
+    set fixedWeeks(fixedWeeks) {
+        if (fixedWeeks) {
+            this.setAttribute("fixed-weeks", "");
+        } else {
+            this.removeAttribute("fixed-weeks");
+        }
+    }
+
+    get minDate() {
+        return this._minDate ? new Date(this._minDate.getTime) : undefined;
+    }
+
+    set minDate(minDate) {
+        if (minDate && minDate instanceof Date) {
+            this.setAttribute("min-date", formatDate(minDate));
+        } else {
+            this.removeAttribute("min-date");
+        }
+    }
+
+    get maxDate() {
+        return this.maxDate ? new Date(this.maxDate.getTime) : undefined;
+    }
+
+    set maxDate(maxDate) {
+        if (maxDate && maxDate instanceof Date) {
+            this.setAttribute("max-date", formatDate(maxDate));
+        } else {
+            this.removeAttribute("max-date");
         }
     }
 
@@ -217,6 +378,9 @@ class NyroCalendar extends HTMLElement {
 
         this._prevMonth = this._header.querySelector(".prevMonth");
         this._nextMonth = this._header.querySelector(".nextMonth");
+
+        this._dayNames = this.shadowRoot.querySelector("#dayNames");
+        this._days = this.shadowRoot.querySelector("#days");
 
         this._trDays = this.shadowRoot.querySelector("thead tr");
         this._tbody = this.shadowRoot.querySelector("tbody");
@@ -248,86 +412,173 @@ class NyroCalendar extends HTMLElement {
             }
         });
 
-        this._readDateAttribute();
+        this._readMinDateAttribute();
+        this._readMaxDateAttribute();
+        this._readMonthAttribute();
 
         this._writeDays();
         this._write();
         this._inited = true;
     }
 
-    _readDateAttribute() {
-        const dateStr = this.getAttribute("date");
-        this._date = dateStr ? new Date(dateStr) : new Date();
-        this._date.setHours(12);
-        this._date.setMinutes(0);
-        this._date.setSeconds(0);
-        this._date.setMilliseconds(0);
+    _readMonthAttribute() {
+        const monthStr = this.getAttribute("month");
+        this._month = calcRespectingMinMaxDate(monthStr ? new Date(monthStr + "-15") : new Date(), this._minDate, this._maxDate);
+
+        this._month.setDate(15);
+        standardizeDate(this._month);
     }
 
-    // 0 for Sunday, 1 for Monday
-    get firstDayOfWeek() {
-        return 1;
+    _readMinDateAttribute() {
+        if (!this.hasAttribute("min-date")) {
+            this._minDate = undefined;
+            return;
+        }
+
+        this._minDate = new Date(this.getAttribute("min-date"));
+        standardizeDate(this._minDate);
+    }
+
+    _readMaxDateAttribute() {
+        if (!this.hasAttribute("max-date")) {
+            this._maxDate = undefined;
+            return;
+        }
+
+        this._maxDate = new Date(this.getAttribute("max-date"));
+        standardizeDate(this._maxDate);
     }
 
     _writeDays() {
         const html = [];
         for (let i = 0; i < 7; i++) {
-            html.push("<th>" + nameDays[(this.firstDayOfWeek + i) % 7] + "</th>");
+            const curDay = (this.firstDayOfWeek + i) % 7;
+            html.push('<span class="day_' + curDay + '">' + nameDays[curDay] + "</span>");
         }
-        this._trDays.innerHTML = html.join("");
+        this._dayNames.innerHTML = html.join("");
     }
 
     _write() {
-        const firstDay = firstDayOfMonth(this._date),
-            nbDays = daysInMonth(this._date),
+        const firstDay = firstDayOfMonth(this._month),
+            nbDays = daysInMonth(this._month),
             html = [];
 
-        let curLine = [];
+        const tmpDate = new Date(this._month.getTime());
+        tmpDate.setDate(1);
 
+        tmpDate.setDate(tmpDate.getDate() - 1);
+        this._header.classList.toggle("cannotPrevMonth", !this.respectMinMaxDate(tmpDate));
+
+        tmpDate.setDate(tmpDate.getDate() + 1);
+
+        let nbDaysBefore = 0;
         if (this.firstDayOfWeek != firstDay.getDay()) {
-            if (this.otherDays) {
-                const prevNbDays = daysInMonth(new Date(this._date.getFullYear(), this._date.getMonth() - 1, 1)),
-                    diffDays = firstDay.getDay() - this.firstDayOfWeek;
-                for (let i = this.firstDayOfWeek; i < firstDay.getDay(); i++) {
-                    curLine.push('<td class="otherDay day_' + i + '">' + (prevNbDays - diffDays + i) + "</td>");
-                }
-            } else {
-                for (let i = this.firstDayOfWeek; i < firstDay.getDay(); i++) {
-                    curLine.push('<td class="empty day_' + i + '"></td>');
+            nbDaysBefore = firstDay.getDay() - this.firstDayOfWeek;
+        } else if (this.fixedWeeks && tmpDate.getMonth() === 1) {
+            // The only case we're adding a complete line before current month is a February month that starts on first day of week.
+            nbDaysBefore = 7;
+        }
+
+        if (nbDaysBefore) {
+            tmpDate.setDate(tmpDate.getDate() - nbDaysBefore - 1);
+            for (let i = 0; i < nbDaysBefore; i++) {
+                tmpDate.setDate(tmpDate.getDate() + 1);
+                if (this.otherDays) {
+                    html.push(
+                        '<span class="otherDay day_' +
+                            tmpDate.getDay() +
+                            (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
+                            '">' +
+                            tmpDate.getDate() +
+                            "</span>"
+                    );
+                } else {
+                    html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
                 }
             }
+            tmpDate.setDate(tmpDate.getDate() + 1);
         }
 
         for (let i = 1; i <= nbDays; i++) {
-            curLine.push('<td class="day_' + ((curLine.length + 1) % 7) + '">' + i + "</td>");
-            if (curLine.length === 7) {
-                html.push("<tr>" + curLine.join("") + "</tr>");
-                curLine = [];
+            tmpDate.setDate(i);
+            html.push(
+                '<span class="day_' +
+                    tmpDate.getDay() +
+                    (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
+                    (formatDate(today) === formatDate(tmpDate) ? " today" : "") +
+                    '">' +
+                    i +
+                    "</span>"
+            );
+        }
+
+        this._header.classList.toggle("cannotNextMonth", !this.respectMinMaxDate(tmpDate));
+
+        const missingDaysOnLastWeek = 7 - (html.length % 7);
+        for (let i = 0; i < missingDaysOnLastWeek; i++) {
+            tmpDate.setDate(tmpDate.getDate() + 1);
+            if (this.otherDays) {
+                html.push(
+                    '<span class="otherDay day_' +
+                        tmpDate.getDay() +
+                        (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
+                        '">' +
+                        tmpDate.getDate() +
+                        "</span>"
+                );
+            } else {
+                html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
             }
         }
 
-        if (curLine.length) {
-            for (let i = 1; curLine.length < 7; i++) {
+        if (this.fixedWeeks && html.length <= 7 * 5) {
+            // We need 6 weeks to have a fixed height
+            for (let i = 0; i < 7; i++) {
+                tmpDate.setDate(tmpDate.getDate() + 1);
                 if (this.otherDays) {
-                    curLine.push('<td class="otherDay day_' + ((curLine.length + 1) % 7) + '">' + i + "</td>");
+                    html.push(
+                        '<span class="otherDay day_' +
+                            tmpDate.getDay() +
+                            (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
+                            '">' +
+                            tmpDate.getDate() +
+                            "</span>"
+                    );
                 } else {
-                    curLine.push('<td class="empty day_' + ((curLine.length + 1) % 7) + '"></td>');
+                    html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
                 }
             }
-            html.push("<tr>" + curLine.join("") + "</tr>");
         }
 
-        this._curMonth.innerHTML = monthFormatter.format(this._date);
-        this._curYear.innerHTML = this._date.getFullYear();
-        this._tbody.innerHTML = html.join("");
+        this._curMonth.innerHTML = monthFormatter.format(this._month);
+        this._curYear.innerHTML = this._month.getFullYear();
+        this._days.innerHTML = html.join("");
+    }
+
+    respectMinMaxDate(date) {
+        if (!(date instanceof Date)) {
+            return false;
+        }
+
+        const dateStd = new Date(date.getTime());
+        standardizeDate(dateStd);
+
+        if (this._minDate && this._minDate > dateStd) {
+            return false;
+        }
+        if (this._maxDate && this._maxDate < dateStd) {
+            return false;
+        }
+
+        return true;
     }
 
     prevMonth() {
-        this.date = new Date(this._date.getFullYear(), this._date.getMonth() - 1, 1);
+        this.monthDate = new Date(this._month.getFullYear(), this._month.getMonth() - 1, 1);
     }
 
     nextMonth() {
-        this.date = new Date(this._date.getFullYear(), this._date.getMonth() + 1, 1);
+        this.monthDate = new Date(this._month.getFullYear(), this._month.getMonth() + 1, 1);
     }
 
     chooseMonth() {
@@ -338,7 +589,7 @@ class NyroCalendar extends HTMLElement {
                 const month = e.target.closest(".month");
                 if (month) {
                     e.preventDefault();
-                    this.date = new Date(this._date.getFullYear(), month.dataset.month, 1);
+                    this.monthDate = new Date(this._month.getFullYear(), month.dataset.month, 1);
                     this._chooseMonth.classList.remove("show");
                 }
             });
@@ -346,11 +597,26 @@ class NyroCalendar extends HTMLElement {
             this.shadowRoot.appendChild(this._chooseMonth);
         }
 
-        const curActive = this._chooseMonth.querySelector(".active");
-        if (curActive) {
-            curActive.classList.remove("active");
-        }
-        this._chooseMonth.querySelector('.month[data-month="' + this._date.getMonth() + '"]').classList.add("active");
+        this._chooseMonth.querySelectorAll(".month").forEach((month) => {
+            let canSwitch = true;
+            const monthDate = new Date(this._month.getFullYear(), month.dataset.month, 15);
+            standardizeDate(monthDate);
+
+            const monthStr = formatMonth(monthDate);
+
+            if (monthStr != this.month) {
+                if (monthStr < this.month) {
+                    monthDate.setDate(daysInMonth(monthDate));
+                } else {
+                    monthDate.setDate(1);
+                }
+                canSwitch = this.respectMinMaxDate(monthDate);
+            }
+
+            month.classList.toggle("active", month.dataset.month == this._month.getMonth());
+            month.classList.toggle("cannot", !canSwitch);
+        });
+
         this._chooseMonth.classList.toggle("show");
     }
 
@@ -362,7 +628,7 @@ class NyroCalendar extends HTMLElement {
                 const year = e.target.closest(".year");
                 if (year) {
                     e.preventDefault();
-                    this.date = new Date(year.dataset.year, this._date.getMonth(), 1);
+                    this.monthDate = new Date(year.dataset.year, this._month.getMonth(), 1);
                     this._chooseYear.classList.remove("show");
                     return;
                 }
@@ -374,7 +640,10 @@ class NyroCalendar extends HTMLElement {
                     if (changeYear.classList.contains("now")) {
                         this._chooseYearShowYear(new Date().getFullYear());
                     } else {
-                        this._chooseYearShowYear(parseInt(this._chooseYear.querySelector(".year:nth-child(5)").dataset.year) + 9 * (changeYear.classList.contains("prevPage") ? -1 : 1));
+                        this._chooseYearShowYear(
+                            parseInt(this._chooseYear.querySelector(".year:nth-child(5)").dataset.year) +
+                                9 * (changeYear.classList.contains("prevPage") ? -1 : 1)
+                        );
                     }
                 }
             });
@@ -382,7 +651,7 @@ class NyroCalendar extends HTMLElement {
             this.shadowRoot.appendChild(this._chooseYear);
         }
 
-        this._chooseYearShowYear(this._date.getFullYear());
+        this._chooseYearShowYear(this._month.getFullYear());
 
         this._chooseYear.classList.toggle("show");
     }
@@ -395,13 +664,27 @@ class NyroCalendar extends HTMLElement {
         year = parseInt(year);
 
         let curYear = year - 4;
-        const dateYear = this._date.getFullYear();
+        const dateYear = this._month.getFullYear();
+
+        this._chooseYear.querySelector(".prevPage").classList.toggle("cannot", !this.respectMinMaxDate(new Date(curYear - 1 + "-12-31")));
+
         this._chooseYear.querySelectorAll(".year").forEach((yearNav) => {
             yearNav.dataset.year = curYear;
             yearNav.innerHTML = curYear;
+
+            let canSwitch = true;
+            if (curYear < dateYear) {
+                canSwitch = this.respectMinMaxDate(new Date(curYear + "-12-31"));
+            } else if (curYear > dateYear) {
+                canSwitch = this.respectMinMaxDate(new Date(curYear + "-01-01"));
+            }
+
             yearNav.classList.toggle("active", curYear == dateYear);
+            yearNav.classList.toggle("cannot", !canSwitch);
             curYear++;
         });
+
+        this._chooseYear.querySelector(".nextPage").classList.toggle("cannot", !this.respectMinMaxDate(new Date(curYear + "-01-01")));
     }
 }
 

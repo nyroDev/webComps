@@ -6,9 +6,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <script type="module" src="nyro-calendar.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <style>
+      #cal1 {
+        font-family: 'Roboto', sans-serif;
+        font-size: 20px;
+        --nyro-calendar-text-color: #fefefe;
+        --nyro-calendar-link-color: #ef0000;
+        --nyro-calendar-background-color: #26292b;
+
+        --nyro-calendar-otherDay-text-color: #f5f9ff99;
+        --nyro-calendar-empty-text-color: #f5f9ff99;
+
+        --nyro-calendar-days-font-family: Verdana;
+
+        --nyro-calendar-cell-padding: 2px;
+        --nyro-calendar-header-padding: 4px 8px;
+
+        border: none;
+        border-radius: 8px;
+        padding: 10px;
+      }
+    </style>
   </head>
   <body>
-    <nyro-calendar date="2025-01-03"></nyro-calendar>
-    <nyro-calendar date="2025-01-03" other-days readonly></nyro-calendar>
+    <nyro-calendar
+      id="cal1"
+      month="2021-02"
+      fixed-weeks
+      other-days
+      min-date="2024-11-01"
+      max-date="2026-12-25"
+    ></nyro-calendar>
+    <nyro-calendar
+      id="cal2"
+      first-day-of-week="1"
+      month="2021-02"
+      min-date="2024-11-01"
+      max-date="2025-06-25"
+      readonly
+    ></nyro-calendar>
+    <nyro-calendar
+      month="2021-02"
+      fixed-weeks
+      other-days
+    ></nyro-calendar>
+
+    <script>
+      (function () {
+        // Syncrhonize 2 calendars
+        const cal1 = document.getElementById('cal1');
+        const cal2 = document.getElementById('cal2');
+
+        cal1.addEventListener('changedMonth', (e) => {
+          cal2.month = cal1.month;
+        });
+      })();
+    </script>
   </body>
 </html>
