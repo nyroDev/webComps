@@ -14,7 +14,7 @@
   <style>
     nyro-upload.styled {
       outline: none;
-        --nyro-upload-font-size: 16px;
+      --nyro-upload-font-size: 16px;
       --nyro-upload-font-family: 'Roboto', sans-serif;
       --nyro-upload-color: #f5f9ffe6;
       --nyro-upload-background-color: #26292b;
@@ -30,25 +30,17 @@
       --nyro-upload-file-error-color: #f43f5e;
       --nyro-upload-file-error-color-text: #fff;
     }
+
     nyro-upload.styled nyro-upload-file {
       --nyro-upload-font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <nyro-upload
-    multiple
-    url="uploadUri"
-    text="Fichier..."
-    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"
-  ></nyro-upload>
-  <nyro-upload
-    class="styled"
-    multiple
-    url="uploadUri"
-    text="Fichier..."
-    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"
-  ></nyro-upload>
+  <nyro-upload multiple url="uploadUri" text="Fichier..."
+    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"></nyro-upload>
+  <nyro-upload class="styled" multiple url="uploadUri" text="Fichier..."
+    accept=".jpg,.jpeg,.png,.svg,image/jpg,image/jpeg,image/png,image/svg+xml"></nyro-upload>
   <script>
     const ups = document.querySelectorAll('nyro-upload');
     ups.forEach(up => {
@@ -62,6 +54,6 @@
     });
   </script>
   <br />
-  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-upload" target="_blank">Github</a>
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-upload" target="_blank">Source on Github</a>
 </body>
 </html>

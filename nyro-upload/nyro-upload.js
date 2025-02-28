@@ -1,7 +1,7 @@
 const NYRO_UPLOAD_STATUSES = {
-    UPLOADING: 'uploading',
-    DONE: 'done',
-    ERROR: 'error',
+    UPLOADING: "uploading",
+    DONE: "done",
+    ERROR: "error",
 };
 
 /////////////////////////////////////////////////////
@@ -10,16 +10,16 @@ const NYRO_UPLOAD_STATUSES = {
 
 const humanFileSize = (size) => {
     const mod = 1024;
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const units = ["B", "KB", "MB", "GB", "TB", "PB"];
     let i = 0;
     while (size > mod) {
         size /= mod;
         ++i;
     }
-    return Math.round(size) + ' ' + units[i];
+    return Math.round(size) + " " + units[i];
 };
 
-const templateFile = document.createElement('template');
+const templateFile = document.createElement("template");
 templateFile.innerHTML = `
 <style>
 :host {
@@ -51,11 +51,9 @@ templateFile.innerHTML = `
     text-overflow: ellipsis;
     max-width: var(--nyro-upload-file-min-width);
 }
-
 .error {
     display: none;
 }
-
 .done,
 :host(.uploaded) .status {
     display: none;
@@ -70,7 +68,6 @@ templateFile.innerHTML = `
 :host(.error) .error {
     display: block;
 }
-
 a {
     color: var(--nyro-upload-file-retry-color);
     text-decoration: none;
@@ -101,24 +98,23 @@ a:hover {
 `;
 
 class NyroUploadFile extends HTMLElement {
-
     connectedCallback() {
         this.attachShadow({
-            mode: 'open'
+            mode: "open",
         });
         this.shadowRoot.append(templateFile.content.cloneNode(true));
 
-        this._nameCont = this.shadowRoot.querySelector('.name');
-        this._sizeCont = this.shadowRoot.querySelector('.size');
-        this._progressCont = this.shadowRoot.querySelector('.progress');
-        this._errorCont = this.shadowRoot.querySelector('.errorTxt');
+        this._nameCont = this.shadowRoot.querySelector(".name");
+        this._sizeCont = this.shadowRoot.querySelector(".size");
+        this._progressCont = this.shadowRoot.querySelector(".progress");
+        this._errorCont = this.shadowRoot.querySelector(".errorTxt");
 
-        this.shadowRoot.querySelector('.retry').addEventListener('click', (e) => {
+        this.shadowRoot.querySelector(".retry").addEventListener("click", (e) => {
             e.preventDefault();
             this.retry();
         });
 
-        this.shadowRoot.querySelector('.cancel').addEventListener('click', (e) => {
+        this.shadowRoot.querySelector(".cancel").addEventListener("click", (e) => {
             e.preventDefault();
             this.cancel();
         });
@@ -133,22 +129,22 @@ class NyroUploadFile extends HTMLElement {
                 if (this._xhr.readyState === 4 && this._xhr.status === 200) {
                     this._promise.resolve(this._xhr.responseText);
                 } else {
-                    this._promise.reject(this._xhr.status + ': ' + this._xhr.statusText);
+                    this._promise.reject(this._xhr.status + ": " + this._xhr.statusText);
                 }
                 this._unbindXhr();
             },
             error: () => {
-                this._promise.reject(this._xhr.status + ': '.this._xhr.statusText);
-            }
+                this._promise.reject(this._xhr.status + ": ".this._xhr.statusText);
+            },
         };
     }
 
     set url(url) {
-        this.setAttribute('url', url);
+        this.setAttribute("url", url);
     }
 
     set name(name) {
-        this.setAttribute('name', name);
+        this.setAttribute("name", name);
     }
 
     set file(file) {
@@ -169,63 +165,65 @@ class NyroUploadFile extends HTMLElement {
     _setProgress(loaded, total) {
         if (this._sizeCont && this._progressCont) {
             if (loaded === true) {
-                this.classList.add('uploaded');
+                this.classList.add("uploaded");
             } else {
                 this._sizeCont.innerHTML = humanFileSize(total);
-                this._progressCont.innerHTML = Math.round(100 * 100 * loaded / total) / 100;
+                this._progressCont.innerHTML = Math.round((100 * 100 * loaded) / total) / 100;
             }
         }
     }
 
     upload() {
         if (this.status === NYRO_UPLOAD_STATUSES.UPLOADING) {
-            console.warn('Already uploading');
+            console.warn("Already uploading");
             return;
         }
 
         this._status = {
-            status: NYRO_UPLOAD_STATUSES.UPLOADING
+            status: NYRO_UPLOAD_STATUSES.UPLOADING,
         };
 
-        this.classList.remove('error');
+        this.classList.remove("error");
 
         this._startUpload()
-            .then(response => {
+            .then((response) => {
                 if (response) {
                     this._setProgress(true);
                     this._triggerStatus({
                         status: NYRO_UPLOAD_STATUSES.DONE,
-                        response: response
+                        response: response,
                     });
                 } else {
                     this._triggerStatus({
                         status: NYRO_UPLOAD_STATUSES.ERROR,
-                        response: response
+                        response: response,
                     });
-                    this.classList.add('error');
+                    this.classList.add("error");
                 }
             })
             .catch((e) => {
                 this._triggerStatus({
-                    status: NYRO_UPLOAD_STATUSES.ERROR
+                    status: NYRO_UPLOAD_STATUSES.ERROR,
                 });
                 this._errorCont.innerHTML = e;
-                this.classList.add('error');
+                this.classList.add("error");
             });
     }
 
     _triggerStatus(status) {
         this._status = status;
-        this.dispatchEvent(new CustomEvent('uploadStatus', {
-            bubbles: true,
-            cancelable: true,
-            detail: status
-        }));
+        this.dispatchEvent(
+            new CustomEvent("uploadStatus", {
+                bubbles: true,
+                cancelable: true,
+                detail: status,
+            })
+        );
     }
 
     _startUpload() {
         const data = new FormData();
-        data.append(this.getAttribute('name') || 'file', this._file);
+        data.append(this.getAttribute("name") || "file", this._file);
 
         // This function should return a promise that resolve to the JSON of the HTTP request
 
@@ -236,21 +234,21 @@ class NyroUploadFile extends HTMLElement {
         return new Promise((resolve, reject) => {
             this._promise = {
                 resolve: resolve,
-                reject: reject
+                reject: reject,
             };
-            this._xhr.upload.addEventListener('progress', this._listener.progress);
-            this._xhr.addEventListener('loadend', this._listener.loadend);
-            this._xhr.addEventListener('error', this._listener.error);
+            this._xhr.upload.addEventListener("progress", this._listener.progress);
+            this._xhr.addEventListener("loadend", this._listener.loadend);
+            this._xhr.addEventListener("error", this._listener.error);
 
-            this._xhr.open('POST', this.getAttribute('url') || document.location.href, true);
+            this._xhr.open("POST", this.getAttribute("url") || document.location.href, true);
             this._xhr.send(data);
         });
     }
 
     _unbindXhr() {
-        this._xhr.upload.removeEventListener('progress', this._listener.progress);
-        this._xhr.removeEventListener('loadend', this._listener.loadend);
-        this._xhr.removeEventListener('error', this._listener.error);
+        this._xhr.upload.removeEventListener("progress", this._listener.progress);
+        this._xhr.removeEventListener("loadend", this._listener.loadend);
+        this._xhr.removeEventListener("error", this._listener.error);
 
         this._promise = false;
     }
@@ -268,7 +266,7 @@ class NyroUploadFile extends HTMLElement {
     cancel() {
         this._cancelUpload();
         this._triggerStatus({
-            status: 'cancel'
+            status: "cancel",
         });
         this.remove();
     }
@@ -279,22 +277,19 @@ class NyroUploadFile extends HTMLElement {
             this.upload();
         }
     }
-
 }
 
-window.customElements.define('nyro-upload-file', NyroUploadFile);
+window.customElements.define("nyro-upload-file", NyroUploadFile);
 
 /////////////////////////////////////////////////////
 // END nyro-upload-file
 /////////////////////////////////////////////////////
 
-
-
 /////////////////////////////////////////////////////
 // START nyro-upload
 /////////////////////////////////////////////////////
 
-const template = document.createElement('template');
+const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
@@ -345,13 +340,11 @@ label:hover {
 }
 #uploading {
     position: absolute;
-
     top: 100%;
     left: 0;
     max-width: var(--nyro-upload-file-min-width);
     max-height: var(--nyro-upload-uploading-max-height);
     margin-top: calc(2 * var(--nyro-upload-border-radius));
-
     overflow: auto;
 }
 </style>
@@ -365,80 +358,75 @@ label:hover {
 `;
 
 class NyroUpload extends HTMLElement {
-
     static get observedAttributes() {
-        return [
-            'text',
-            'multiple',
-            'accept'
-        ];
+        return ["text", "multiple", "accept"];
     }
 
     attributeChangedCallback(name, prev, next) {
-        if (name === 'text') {
+        if (name === "text") {
             this._setText();
-        } else if (name === 'multiple') {
+        } else if (name === "multiple") {
             this._setMultiple();
-        } else if (name === 'accept') {
+        } else if (name === "accept") {
             this._setAccept();
         }
     }
 
     _setText() {
         if (this._label) {
-            this._label.innerHTML = this.getAttribute('text') || 'Browse...';
+            this._label.innerHTML = this.getAttribute("text") || "Browse...";
         }
     }
 
     _setMultiple() {
         if (this._input) {
-            this._input.multiple = this.hasAttribute('multiple');
+            this._input.multiple = this.hasAttribute("multiple");
         }
     }
 
     _setAccept() {
         if (this._input) {
-            this._input.accept = this.getAttribute('accept');
+            this._input.accept = this.getAttribute("accept");
         }
     }
 
     get maxSyncUpload() {
-        return this.hasAttribute('max-sync-upload') ? parseInt(this.getAttribute('max-sync-upload')) : 2;
+        return this.hasAttribute("max-sync-upload") ? parseInt(this.getAttribute("max-sync-upload")) : 2;
     }
 
     get files() {
-        return this.querySelectorAll('nyro-upload-file');
+        return this.querySelectorAll("nyro-upload-file");
     }
 
     connectedCallback() {
         this.attachShadow({
-            mode: 'open'
+            mode: "open",
         });
         this.shadowRoot.append(template.content.cloneNode(true));
 
-        if (!this.hasAttribute('tabindex')) {
-            this.setAttribute('tabindex', '0');
+        if (!this.hasAttribute("tabindex")) {
+            this.setAttribute("tabindex", "0");
         }
 
         this._pending = 0;
 
-        this._label = this.shadowRoot.querySelector('label span');
+        this._label = this.shadowRoot.querySelector("label span");
         this._input = this.shadowRoot.querySelector('input[type="file"]');
-        this._uploading = this.shadowRoot.querySelector('#uploading');
+        this._uploading = this.shadowRoot.querySelector("#uploading");
 
         this._setText();
         this._setMultiple();
         this._setAccept();
 
-        this._input.addEventListener('change', () => {
-            Array.from(this._input.files).forEach(file => {
+        this._input.addEventListener("change", () => {
+            Array.from(this._input.files).forEach((file) => {
                 this.addUpload(file);
             });
-            this._input.value = '';
+            this._input.value = "";
             this.startUpload();
         });
 
-        this.addEventListener('uploadStatus', (e) => {
+        this.addEventListener("uploadStatus", (e) => {
             this._pending--;
             this.startUpload();
         });
@@ -446,14 +434,14 @@ class NyroUpload extends HTMLElement {
 
     addUpload(file) {
         const uploadFile = new NyroUploadFile();
-        if (this.hasAttribute('url')) {
-            uploadFile.url = this.getAttribute('url');
+        if (this.hasAttribute("url")) {
+            uploadFile.url = this.getAttribute("url");
         }
-        if (this.hasAttribute('name')) {
-            uploadFile.name = this.getAttribute('name');
+        if (this.hasAttribute("name")) {
+            uploadFile.name = this.getAttribute("name");
         }
 
-        uploadFile.slot = 'upload';
+        uploadFile.slot = "upload";
         this.append(uploadFile);
 
         uploadFile.file = file;
@@ -463,7 +451,7 @@ class NyroUpload extends HTMLElement {
         let nbUploading = 0;
         const needUploads = [];
 
-        this.files.forEach(uploadFile => {
+        this.files.forEach((uploadFile) => {
             if (nbUploading + needUploads.length >= this.maxSyncUpload) {
                 return;
             }
@@ -480,7 +468,7 @@ class NyroUpload extends HTMLElement {
         });
 
         if (needUploads.length) {
-            needUploads.forEach(uploadFile => {
+            needUploads.forEach((uploadFile) => {
                 this._pending++;
                 uploadFile.upload();
             });
@@ -492,7 +480,7 @@ class NyroUpload extends HTMLElement {
     }
 
     clearDone() {
-        this.files.forEach(uploadFile => {
+        this.files.forEach((uploadFile) => {
             if (uploadFile.status === NYRO_UPLOAD_STATUSES.DONE) {
                 uploadFile.remove();
             }
@@ -501,9 +489,9 @@ class NyroUpload extends HTMLElement {
 
     _endUpload() {
         const stats = {
-            total: 0
+            total: 0,
         };
-        this.files.forEach(uploadFile => {
+        this.files.forEach((uploadFile) => {
             stats.total++;
             const status = uploadFile.status;
             if (status) {
@@ -513,16 +501,17 @@ class NyroUpload extends HTMLElement {
                 stats[status]++;
             }
         });
-        this.dispatchEvent(new CustomEvent('uploadEnded', {
-            bubbles: true,
-            cancelable: true,
-            detail: stats
-        }));
+        this.dispatchEvent(
+            new CustomEvent("uploadEnded", {
+                bubbles: true,
+                cancelable: true,
+                detail: stats,
+            })
+        );
     }
-
 }
 
-window.customElements.define('nyro-upload', NyroUpload);
+window.customElements.define("nyro-upload", NyroUpload);
 
 /////////////////////////////////////////////////////
 // END nyro-upload
@@ -530,8 +519,4 @@ window.customElements.define('nyro-upload', NyroUpload);
 
 export default NyroUpload;
 
-export {
-    NyroUpload,
-    NyroUploadFile,
-    NYRO_UPLOAD_STATUSES
-};
+export { NyroUpload, NyroUploadFile, NYRO_UPLOAD_STATUSES };

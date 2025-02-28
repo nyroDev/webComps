@@ -1,11 +1,11 @@
 const valueMissingMessage = (() => {
-    const input = document.createElement('input');
+    const input = document.createElement("input");
     input.required = true;
 
     return input.validationMessage;
 })();
 
-const template = document.createElement('template');
+const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
@@ -54,14 +54,12 @@ input::-webkit-search-results-button,
 input::-webkit-search-results-decoration {
     display: none;
 }
-
 .toggle a {
     color: var(--nyro-password-color);
     text-decoration: none;
 }
-
 .toggle .hide,
-:host([show]) .toggle .show  {
+:host([show]) .toggle .show {
     display: none;
 }
 :host([show]) .toggle .hide {
@@ -88,7 +86,6 @@ input::-webkit-search-results-decoration {
 `;
 
 class NyroPassword extends HTMLElement {
-
     static get formAssociated() {
         return true;
     }
@@ -99,58 +96,54 @@ class NyroPassword extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return [
-            'required',
-            'placeholder',
-            'show'
-        ];
+        return ["required", "placeholder", "show"];
     }
 
     attributeChangedCallback(name, prev, next) {
-        if (name === 'required') {
+        if (name === "required") {
             this._setMyValidity();
-        } else if (name === 'placeholder') {
+        } else if (name === "placeholder") {
             this.placeholder = next;
-        } else if (name === 'show') {
+        } else if (name === "show") {
             this._setType();
         }
     }
 
     connectedCallback() {
         this.attachShadow({
-            mode: 'open'
+            mode: "open",
         });
         this.shadowRoot.append(template.content.cloneNode(true));
 
-        this._input = this.shadowRoot.querySelector('input');
+        this._input = this.shadowRoot.querySelector("input");
 
-        this._input.addEventListener('input', () => {
+        this._input.addEventListener("input", () => {
             this._setValue();
         });
 
-        this._input.addEventListener('change', () => {
+        this._input.addEventListener("change", () => {
             this._setValue();
         });
 
-        this.shadowRoot.querySelector('.toggle').addEventListener('click', (e) => {
+        this.shadowRoot.querySelector(".toggle").addEventListener("click", (e) => {
             e.preventDefault();
-            const toggle = e.target.closest('a');
+            const toggle = e.target.closest("a");
             if (toggle) {
-                this.show = toggle.classList.contains('show');
+                this.show = toggle.classList.contains("show");
                 return;
             }
 
             const slot = e.target.closest('[slot="show"], [slot="hide"]');
             if (slot) {
-                this.show = slot.slot === 'show';
+                this.show = slot.slot === "show";
             }
         });
 
-        if (!this.hasAttribute('tabindex')) {
-            this.setAttribute('tabindex', '0');
+        if (!this.hasAttribute("tabindex")) {
+            this.setAttribute("tabindex", "0");
         }
 
-        this.addEventListener('focus', (e) => {
+        this.addEventListener("focus", (e) => {
             if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
                 return;
             }
@@ -158,41 +151,41 @@ class NyroPassword extends HTMLElement {
         });
 
         if (this._internals.form) {
-            this._internals.form.addEventListener('submit', () => {
+            this._internals.form.addEventListener("submit", () => {
                 this.show = false;
             });
         }
 
-        if (this.hasAttribute('value')) {
-            this.value = this.getAttribute('value');
+        if (this.hasAttribute("value")) {
+            this.value = this.getAttribute("value");
         }
-        if (this.hasAttribute('placeholder')) {
-            this.placeholder = this.getAttribute('placeholder');
+        if (this.hasAttribute("placeholder")) {
+            this.placeholder = this.getAttribute("placeholder");
         }
         this._setMyValidity();
     }
 
     get show() {
-        return this.hasAttribute('show');
+        return this.hasAttribute("show");
     }
 
     set show(show) {
         if (show) {
-            this.setAttribute('show', '');
+            this.setAttribute("show", "");
         } else {
-            this.removeAttribute('show');
+            this.removeAttribute("show");
         }
     }
 
     get required() {
-        return this.hasAttribute('required');
+        return this.hasAttribute("required");
     }
 
     set required(required) {
         if (required) {
-            this.setAttribute('required', '');
+            this.setAttribute("required", "");
         } else {
-            this.removeAttribute('required');
+            this.removeAttribute("required");
         }
     }
 
@@ -216,7 +209,7 @@ class NyroPassword extends HTMLElement {
     }
 
     _setType() {
-        this._input.type = this.show ? 'text' : 'password';
+        this._input.type = this.show ? "text" : "password";
     }
 
     _setValue() {
@@ -226,9 +219,13 @@ class NyroPassword extends HTMLElement {
 
     _setMyValidity() {
         if (this.required && this._input && !this._input.value) {
-            this.setValidity({
-                valueMissing: true
-            }, valueMissingMessage, this._input);
+            this.setValidity(
+                {
+                    valueMissing: true,
+                },
+                valueMissingMessage,
+                this._input
+            );
         } else {
             this.setValidity({});
         }
@@ -251,7 +248,7 @@ class NyroPassword extends HTMLElement {
     }
 
     get name() {
-        return this.getAttribute('name');
+        return this.getAttribute("name");
     }
 
     get type() {
@@ -274,6 +271,6 @@ class NyroPassword extends HTMLElement {
     // https://web.dev/more-capable-form-controls/
 }
 
-window.customElements.define('nyro-password', NyroPassword);
+window.customElements.define("nyro-password", NyroPassword);
 
 export default NyroPassword;

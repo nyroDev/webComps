@@ -2,7 +2,7 @@
 // START nyro-select-option
 /////////////////////////////////////////////////////
 
-const templateOption = document.createElement('template');
+const templateOption = document.createElement("template");
 templateOption.innerHTML = `
 <style>
 :host {
@@ -26,76 +26,72 @@ templateOption.innerHTML = `
 `;
 
 class NyroSelectOption extends HTMLElement {
-
     connectedCallback() {
         this.attachShadow({
-            mode: 'open'
+            mode: "open",
         });
         this.shadowRoot.append(templateOption.content.cloneNode(true));
     }
 
     get value() {
-        return this.getAttribute('value');
+        return this.getAttribute("value");
     }
 
     set value(value) {
         if (value) {
-            this.setAttribute('value', value);
+            this.setAttribute("value", value);
         } else {
-            this.removeAttribute('value');
+            this.removeAttribute("value");
         }
     }
 
     get selected() {
-        return this.hasAttribute('selected');
+        return this.hasAttribute("selected");
     }
 
     set selected(selected) {
         if (selected) {
-            this.setAttribute('selected', '');
+            this.setAttribute("selected", "");
         } else {
-            this.removeAttribute('selected');
+            this.removeAttribute("selected");
         }
     }
 
     get focused() {
-        return this.hasAttribute('focused');
+        return this.hasAttribute("focused");
     }
 
     set focused(focused) {
         if (focused) {
-            this.setAttribute('focused', '');
+            this.setAttribute("focused", "");
         } else {
-            this.removeAttribute('focused');
+            this.removeAttribute("focused");
         }
     }
 
     get label() {
         return this.innerHTML;
     }
-
 }
 
-window.customElements.define('nyro-select-option', NyroSelectOption);
+window.customElements.define("nyro-select-option", NyroSelectOption);
 
 /////////////////////////////////////////////////////
 // END nyro-select-option
 /////////////////////////////////////////////////////
-
-
 
 /////////////////////////////////////////////////////
 // START nyro-select
 /////////////////////////////////////////////////////
 
 const valueMissingMessage = (() => {
-    let select = document.createElement('select');
+    let select = document.createElement("select");
     select.required = true;
 
     return select.validationMessage;
 })();
 
-const template = document.createElement('template');
+const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
@@ -201,11 +197,10 @@ template.innerHTML = `
 
 const normalizeTextReg = /\p{Diacritic}/gu;
 const normalizeText = (text) => {
-    return text.normalize('NFD').replace(normalizeTextReg, '').toLowerCase().trim();
+    return text.normalize("NFD").replace(normalizeTextReg, "").toLowerCase().trim();
 };
 
 class NyroSelect extends HTMLElement {
-
     static get formAssociated() {
         return true;
     }
@@ -216,63 +211,63 @@ class NyroSelect extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['required'];
+        return ["required"];
     }
 
     get focused() {
-        return this.hasAttribute('focused');
+        return this.hasAttribute("focused");
     }
 
     set focused(focused) {
         if (focused) {
-            this.setAttribute('focused', '');
+            this.setAttribute("focused", "");
         } else {
-            this.removeAttribute('focused');
+            this.removeAttribute("focused");
         }
     }
 
     attributeChangedCallback(name, prev, next) {
-        if (name === 'required') {
+        if (name === "required") {
             this._setValidity();
         }
     }
 
     connectedCallback() {
         this.attachShadow({
-            mode: 'open'
+            mode: "open",
         });
         this.shadowRoot.append(template.content.cloneNode(true));
 
         const insideStyle = this.querySelector('style[slot="insideStyle"]');
         if (insideStyle) {
-            this.shadowRoot.querySelector('style').textContent += insideStyle.textContent;
+            this.shadowRoot.querySelector("style").textContent += insideStyle.textContent;
             insideStyle.remove();
         }
 
-        if (!this.hasAttribute('tabindex')) {
-            this.setAttribute('tabindex', '0');
+        if (!this.hasAttribute("tabindex")) {
+            this.setAttribute("tabindex", "0");
         }
 
         this._value = undefined;
         this._search = this.shadowRoot.querySelector('input[type="search"]');
-        this._dropdown = this.shadowRoot.querySelector('.dropdown');
+        this._dropdown = this.shadowRoot.querySelector(".dropdown");
 
-        this.addEventListener('focus', (e) => {
+        this.addEventListener("focus", (e) => {
             if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
                 return;
             }
             this._search.focus();
         });
 
-        this.addEventListener('blur', () => {
+        this.addEventListener("blur", () => {
             this.focused = false;
-            const currentSelected = this.querySelector('nyro-select-option[selected]');
+            const currentSelected = this.querySelector("nyro-select-option[selected]");
             if (currentSelected) {
                 this._search.value = currentSelected.label;
             }
         });
 
-        this.addEventListener('click', (e) => {
+        this.addEventListener("click", (e) => {
             if (this.focused || e.defaultPrevented) {
                 return;
             }
@@ -285,47 +280,47 @@ class NyroSelect extends HTMLElement {
             }, 150);
         });
 
-        this._search.addEventListener('input', () => {
+        this._search.addEventListener("input", () => {
             this._filter();
         });
 
-        this._search.addEventListener('keydown', (e) => {
+        this._search.addEventListener("keydown", (e) => {
             switch (e.key) {
-                case 'ArrowUp':
+                case "ArrowUp":
                     e.preventDefault();
                     this._moveFocus(-1);
                     break;
-                case 'ArrowDown':
+                case "ArrowDown":
                     e.preventDefault();
                     this._moveFocus(1);
                     break;
-                case 'Enter':
+                case "Enter":
                     e.preventDefault();
                     this._selectFocused();
                     break;
-                case 'Escape':
+                case "Escape":
                     e.preventDefault();
                     this._search.blur();
                     break;
             }
         });
 
-        this._search.addEventListener('focus', (e) => {
+        this._search.addEventListener("focus", (e) => {
             if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
                 return;
             }
-            this._search.value = '';
+            this._search.value = "";
             this.focused = true;
             this._filter();
             this._positionDropdown();
-            const currentSelected = this.querySelector('nyro-select-option[selected]');
+            const currentSelected = this.querySelector("nyro-select-option[selected]");
             if (currentSelected) {
                 this._scrollIntoView(currentSelected);
             }
         });
 
-        this._dropdown.addEventListener('click', (e) => {
-            const option = e.target.closest('nyro-select-option');
+        this._dropdown.addEventListener("click", (e) => {
+            const option = e.target.closest("nyro-select-option");
             if (!option) {
                 return;
             }
@@ -339,9 +334,13 @@ class NyroSelect extends HTMLElement {
         if (this._defaultOption) {
             //this._defaultOption.hidden = true;
         }
-        this._search.placeholder = this.hasAttribute('placeholder') ? this.getAttribute('placeholder') : (this._defaultOption ? this._defaultOption.label : '');
+        this._search.placeholder = this.hasAttribute("placeholder")
+            ? this.getAttribute("placeholder")
+            : this._defaultOption
+            ? this._defaultOption.label
+            : "";
 
-        let currentSelected = this.querySelector('nyro-select-option[selected]');
+        let currentSelected = this.querySelector("nyro-select-option[selected]");
         if (!currentSelected && this._defaultOption) {
             currentSelected = this._defaultOption;
         }
@@ -350,14 +349,14 @@ class NyroSelect extends HTMLElement {
     }
 
     get required() {
-        return this.hasAttribute('required');
+        return this.hasAttribute("required");
     }
 
     set required(required) {
         if (required) {
-            this.setAttribute('required', '');
+            this.setAttribute("required", "");
         } else {
-            this.removeAttribute('required');
+            this.removeAttribute("required");
         }
     }
 
@@ -372,7 +371,7 @@ class NyroSelect extends HTMLElement {
 
     _setOptionSelect(option, ignoreUnselect) {
         if (!ignoreUnselect) {
-            this.querySelectorAll('nyro-select-option').forEach(opt => {
+            this.querySelectorAll("nyro-select-option").forEach((opt) => {
                 opt.selected = false;
             });
         }
@@ -385,36 +384,38 @@ class NyroSelect extends HTMLElement {
 
         if (option && option !== this._defaultOption) {
             this._value = option.value;
-            this.setAttribute('value', this._value);
+            this.setAttribute("value", this._value);
             option.selected = true;
             this._search.value = option.label;
             this._internals.setFormValue(option.value);
         } else {
             this._value = undefined;
-            this.removeAttribute('value');
-            this._internals.setFormValue('');
+            this.removeAttribute("value");
+            this._internals.setFormValue("");
         }
         this._setValidity();
 
         if (!ignoreUnselect) {
-            this.dispatchEvent(new Event('change', {
-                bubbles: true,
-                cancelable: true,
-            }));
+            this.dispatchEvent(
+                new Event("change", {
+                    bubbles: true,
+                    cancelable: true,
+                })
+            );
         }
     }
 
     _positionDropdown() {
         const bounding = this.getBoundingClientRect();
 
-        this._dropdown.style.minWidth = (bounding.width) + 'px';
-        this._dropdown.style.top = (bounding.top + bounding.height) + 'px';
-        this._dropdown.style.left = (bounding.left) + 'px';
+        this._dropdown.style.minWidth = bounding.width + "px";
+        this._dropdown.style.top = bounding.top + bounding.height + "px";
+        this._dropdown.style.left = bounding.left + "px";
     }
 
     _filter() {
         let searchVal = normalizeText(this._search.value);
-        this.querySelectorAll('nyro-select-option').forEach(option => {
+        this.querySelectorAll("nyro-select-option").forEach((option) => {
             const matching = searchVal.length ? normalizeText(option.label).indexOf(searchVal) !== -1 : true;
             option.hidden = !matching;
             if (!matching && option.focused) {
@@ -424,12 +425,12 @@ class NyroSelect extends HTMLElement {
     }
 
     _moveFocus(direction) {
-        let currentlyFocused = this.querySelector('nyro-select-option[focused]:not([hidden])');
+        let currentlyFocused = this.querySelector("nyro-select-option[focused]:not([hidden])");
         if (!currentlyFocused) {
-            currentlyFocused = this.querySelector('nyro-select-option[selected]:not([hidden])');
+            currentlyFocused = this.querySelector("nyro-select-option[selected]:not([hidden])");
         }
         if (!currentlyFocused) {
-            currentlyFocused = this.querySelector('nyro-select-option:not([hidden])');
+            currentlyFocused = this.querySelector("nyro-select-option:not([hidden])");
             if (direction === 1) {
                 // focus it directly, this is the first arrow down
                 currentlyFocused.focused = true;
@@ -447,26 +448,26 @@ class NyroSelect extends HTMLElement {
             // Search through all next sibling
             while (!newFocused && currentCursor.nextElementSibling) {
                 currentCursor = currentCursor.nextElementSibling;
-                if (currentCursor.matches('nyro-select-option:not([hidden])')) {
+                if (currentCursor.matches("nyro-select-option:not([hidden])")) {
                     newFocused = currentCursor;
                 }
             }
 
             if (!newFocused) {
-                newFocused = this.querySelector('nyro-select-option:not([hidden])');
+                newFocused = this.querySelector("nyro-select-option:not([hidden])");
             }
         } else {
             let currentCursor = currentlyFocused;
             // Search through all previous sibling
             while (!newFocused && currentCursor.previousElementSibling) {
                 currentCursor = currentCursor.previousElementSibling;
-                if (currentCursor.matches('nyro-select-option:not([hidden])')) {
+                if (currentCursor.matches("nyro-select-option:not([hidden])")) {
                     newFocused = currentCursor;
                 }
             }
 
             if (!newFocused) {
-                newFocused = this.querySelector('nyro-select-option:not([hidden]):last-child');
+                newFocused = this.querySelector("nyro-select-option:not([hidden]):last-child");
             }
         }
 
@@ -478,7 +479,7 @@ class NyroSelect extends HTMLElement {
     }
 
     _selectFocused() {
-        const currentlyFocused = this.querySelector('nyro-select-option[focused]:not([hidden])');
+        const currentlyFocused = this.querySelector("nyro-select-option[focused]:not([hidden])");
         if (!currentlyFocused) {
             this._setOptionSelect();
             this.focused = false;
@@ -490,17 +491,21 @@ class NyroSelect extends HTMLElement {
 
     _scrollIntoView(option, direct) {
         option.scrollIntoView({
-            block: 'center',
-            inline: 'center',
-            behavior: 'instant'
+            block: "center",
+            inline: "center",
+            behavior: "instant",
         });
     }
 
     _setValidity() {
-        if (this.required && (this._value === undefined || this._value === '')) {
-            this._internals.setValidity({
-                valueMissing: true
-            }, valueMissingMessage, this._search);
+        if (this.required && (this._value === undefined || this._value === "")) {
+            this._internals.setValidity(
+                {
+                    valueMissing: true,
+                },
+                valueMissingMessage,
+                this._search
+            );
         } else {
             this._internals.setValidity({});
         }
@@ -523,7 +528,7 @@ class NyroSelect extends HTMLElement {
     }
 
     get name() {
-        return this.getAttribute('name');
+        return this.getAttribute("name");
     }
 
     get type() {
@@ -544,10 +549,9 @@ class NyroSelect extends HTMLElement {
 
     // @todo read and implement more functions described here
     // https://web.dev/more-capable-form-controls/
-
 }
 
-window.customElements.define('nyro-select', NyroSelect);
+window.customElements.define("nyro-select", NyroSelect);
 
 export default NyroSelect;
 

@@ -1,19 +1,18 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Test video pls</title>
+<head>
+  <title>Test video pls</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="module" src="../nyro-video/nyro-video.js"></script>
+  <script type="module" src="nyro-videopls.js"></script>
 
-    <script type="module" src="../nyro-video/nyro-video.js"></script>
-    <script type="module" src="nyro-videopls.js"></script>
-
-    <style>
+  <style>
     nyro-videopls {
-        display: block;
-        width: 800px;
-        max-width: 100%;
-        height: 500px;
+      display: block;
+      width: 800px;
+      max-width: 100%;
+      height: 500px;
     }
     nyro-video {
       display: block;
@@ -21,19 +20,18 @@
       max-width: 100%;
       height: 500px;
     }
-    </style>
+  </style>
+</head>
+<body>
+  <nyro-videopls autoplay controls
+    ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator=">
+    <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
+    <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+      ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="></nyro-videoplsitem>
+    <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
+  </nyro-videopls>
 
-  </head>
-  <body>
-    <nyro-videopls
-        autoplay
-        controls
-        ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="
-    >
-        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
-        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" ads="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="></nyro-videoplsitem>
-        <nyro-videoplsitem src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"></nyro-videoplsitem>
-    </nyro-videopls>
-
-  </body>
+  <br />
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-videopls" target="_blank">Source on Github</a>
+</body>
 </html>
