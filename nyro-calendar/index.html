@@ -13,23 +13,21 @@
 
     <style>
       #cal1 {
+        border: none;
+        --nyro-calendar-border-radius: 1em;
+
         font-family: 'Roboto', sans-serif;
-        font-size: 20px;
+        font-size: 2rem;
         --nyro-calendar-text-color: #fefefe;
         --nyro-calendar-link-color: #ef0000;
+        --nyro-calendar-link-color-hover: #f00;
         --nyro-calendar-background-color: #26292b;
 
         --nyro-calendar-otherDay-text-color: #f5f9ff99;
         --nyro-calendar-empty-text-color: #f5f9ff99;
-
-        --nyro-calendar-days-font-family: Verdana;
-
-        --nyro-calendar-cell-padding: 2px;
-        --nyro-calendar-header-padding: 4px 8px;
-
-        border: none;
-        border-radius: 8px;
-        padding: 10px;
+      }
+      #cal3 {
+        font-size: 12px;
       }
     </style>
   </head>
@@ -51,6 +49,7 @@
       readonly
     ></nyro-calendar>
     <nyro-calendar
+      id="cal3"
       month="2021-02"
       fixed-weeks
       other-days

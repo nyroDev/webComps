@@ -2,36 +2,53 @@ const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
-    --nyro-calendar-font-family: "Arial";
-    --nyro-calendar-text-color: #000000;
-    --nyro-calendar-background-color: #ffffff;
-    --nyro-calendar-cell-padding: 1px;
-    --nyro-calendar-cell-height: 1.5em;
-
-    --nyro-calendar-otherDay-text-color: #ccc;
+    --nyro-calendar-font-family: system-ui;
+    --nyro-calendar-text-color: #101010;
+    --nyro-calendar-otherDay-text-color: #7a7a7a;
     --nyro-calendar-outOfrange-text-color: var(--nyro-calendar-otherDay-text-color);
-    --nyro-calendar-empty-text-color: #ccc;
+    --nyro-calendar-link-color: #0078d4;
+    --nyro-calendar-link-color-hover: #004a82;
+    --nyro-calendar-background-color: #ffffff;
 
-    --nyro-calendar-days-font-family: var(--nyro-calendar-font-family);
-    --nyro-calendar-link-color: #0b1cff;
+    --nyro-calendar-border-radius: 0.2em;
 
-    --nyro-calendar-dayNames-text-color: var(--nyro-calendar-otherDay-text-color);
-    --nyro-calendar-header-padding: 4px 2px 2px;
-    --nyro-calendar-header-border: none; 1px solid var(--nyro-calendar-text-color);
+    --nyro-calendar-cannot-opacity: 0.5;
 
-    --nyro-calendar-days-border: none; 1px solid var(--nyro-calendar-text-color);
+    --nyro-calendar-number-font: 0.85em var(--nyro-calendar-font-family);
+
+    --nyro-calendar-header-padding: 0.2em 0.3em;
+    --nyro-calendar-header-border-bottom: none;
+
+    --nyro-calendar-header-div-font: "";
+    --nyro-calendar-header-div-text-transform: capitalize;
+
+    --nyro-calendar-header-nav-color: var(--nyro-calendar-link-color);
+    --nyro-calendar-header-nav-color-hover: var(--nyro-calendar-link-color-hover);
+    --nyro-calendar-header-nav-font: "";
+
+    --nyro-calendar-dayNames-font: 80% var(--nyro-calendar-font-family);
+    --nyro-calendar-dayNames-text-transform: uppercase;
+    --nyro-calendar-dayNames-text-color: var(--nyro-calendar-text-color);
+    --nyro-calendar-dayNames-border: none;
+
+    --nyro-calendar-cell-padding: 0.06em;
+    --nyro-calendar-cell-height: 2em;
 
     position: relative;
     display: inline-block;
     font-family: var(--nyro-calendar-font-family);
     color: var(--nyro-calendar-text-color);
     background: var(--nyro-calendar-background-color);
-    border: 1px solid #767676;
-    border-radius: 2px;
+    border: 1px solid #bfbfbf;
+    padding: 0.3em;
+    border-radius: var(--nyro-calendar-border-radius);
 }
 a {
     color: var(--nyro-calendar-link-color);
     text-decoration: none;
+}
+a:hover {
+    color: var(--nyro-calendar-link-color-hover);
 }
 :host([readonly]) header a {
     color: var(--nyro-calendar-text-color);
@@ -45,16 +62,28 @@ header {
     align-items: center;
     justify-content: space-between;
     padding: var(--nyro-calendar-header-padding);
-    border-bottom: var(--nyro-calendar-header-border);
+    border-bottom: var(--nyro-calendar-header-border-bottom);
+}
+header div {
+    font: var(--nyro-calendar-header-div-font);
+    text-transform: var(--nyro-calendar-header-div-text-transform);
+}
+header nav {
+    font: var(--nyro-calendar-header-nav-font);
+}
+header nav a {
+    color: var(--nyro-calendar-header-nav-color);
+}
+header nav a:hover {
+    color: var(--nyro-calendar-header-nav-color-hover);
 }
 header.cannotPrevMonth .prevMonth,
 header.cannotNextMonth .nextMonth,
 .chooseMonth .cannot,
 .chooseYear .cannot {
-    opacity: 0.5;
+    opacity: var(--nyro-calendar-cannot-opacity);
     pointer-events: none;
 }
-
 main section {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -63,21 +92,19 @@ main section > span {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--nyro-calendar-cell-height);
+    aspect-ratio: 1;
+    font: var(--nyro-calendar-number-font);
     height: var(--nyro-calendar-cell-height);
     padding: var(--nyro-calendar-cell-padding);
 }
-
 #dayNames {
-    font-size: 80%;
     color: var(--nyro-calendar-dayNames-text-color);
-    border-bottom: var(--nyro-calendar-header-border);
+    font: var(--nyro-calendar-dayNames-font);
+    text-transform: var(--nyro-calendar-dayNames-text-transform);
+    border-bottom: var(--nyro-calendar-dayNames-border);
 }
-#days {
-    font-family: var(--nyro-calendar-days-font-family);
-}
-.empty {
-    color: var(--nyro-calendar-empty-text-color);
+#dayNames > span {
+    aspect-ratio: auto;
 }
 .otherDay {
     color: var(--nyro-calendar-otherDay-text-color);
@@ -88,7 +115,9 @@ main section > span {
 .today {
     font-weight: bold;
 }
-
+.empty {
+    opacity: 0;
+}
 .chooseMonth,
 .chooseYear {
     position: absolute;
@@ -98,6 +127,7 @@ main section > span {
     align-items: center;
     justify-content: space-between;
     background: var(--nyro-calendar-background-color);
+    border-radius: var(--nyro-calendar-border-radius);
 }
 .chooseMonth.show,
 .chooseYear.show {
@@ -114,6 +144,15 @@ main section > span {
 .chooseMonth > a.active,
 .chooseYear > a.active {
     font-weight: bold;
+    color: var(--nyro-calendar-link-color-hover);
+}
+.chooseMonth .month,
+.chooseYear .year {
+    font: var(--nyro-calendar-header-div-font);
+    text-transform: var(--nyro-calendar-header-div-text-transform);
+}
+.chooseYear .yearPage {
+    font: var(--nyro-calendar-header-nav-font);
 }
 </style>
 <header>
@@ -225,9 +264,9 @@ const createChooseYear = () => {
             html.push('<a href="#" class="year"></a>');
         }
 
-        html.push('<a href="#" class="changeYear prevPage">&lt;</a>');
+        html.push('<a href="#" class="changeYear yearPage prevPage">&lt;</a>');
         html.push('<a href="#" class="changeYear now">' + intlToday + "</a>");
-        html.push('<a href="#" class="changeYear nextPage">&gt;</a>');
+        html.push('<a href="#" class="changeYear yearPage nextPage">&gt;</a>');
 
         html.push("</nav>");
         tplChooseYear.innerHTML = html.join("");
