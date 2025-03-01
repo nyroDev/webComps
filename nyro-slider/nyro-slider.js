@@ -8,7 +8,7 @@ template.innerHTML = `
     display: inline-block;
 }
 :host(:not([disable-swipe])) {
-    touch-action: none;
+    touch-action: pinch-zoom pan-y;
 }
 main {
     --pos: 0;
