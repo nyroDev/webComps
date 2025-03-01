@@ -7,6 +7,9 @@ template.innerHTML = `
 
     display: inline-block;
 }
+:host(:not([disable-swipe])) {
+    touch-action: none;
+}
 main {
     --pos: 0;
     --nb: 1;
@@ -47,14 +50,93 @@ main div {
 <span class="calc"></span>
 `;
 
+let registerSwipeEventsAdded = false;
+
+const registerSwipeEvents = () => {
+    if (registerSwipeEventsAdded) {
+        return;
+    }
+    registerSwipeEventsAdded = true;
+
+    const pointerPos = {
+            nyroSlider: false,
+            first: {},
+            last: {},
+        },
+        unbind = () => {
+            document.body.removeEventListener("pointermove", pointerMove);
+            document.body.removeEventListener("pointerup", pointerUp);
+            document.body.removeEventListener("pointercancel", pointerCancel);
+            pointerPos.nyroSlider = false;
+        },
+        checkSwipe = () => {
+            const diffX = pointerPos.first.x - pointerPos.last.x;
+
+            if (Math.abs(diffX) > 30) {
+                if (diffX < 0) {
+                    pointerPos.nyroSlider.prev();
+                } else {
+                    pointerPos.nyroSlider.next();
+                }
+                return true;
+            }
+        },
+        pointerMove = (e) => {
+            pointerPos.last.x = e.clientX;
+            pointerPos.last.y = e.clientY;
+
+            e.preventDefault();
+
+            if (checkSwipe()) {
+                unbind();
+            }
+        },
+        pointerUp = (e) => {
+            pointerPos.last.x = e.clientX;
+            pointerPos.last.y = e.clientY;
+
+            e.preventDefault();
+
+            unbind();
+        },
+        pointerCancel = (e) => {
+            unbind();
+        };
+
+    document.body.addEventListener("pointerdown", (e) => {
+        const nyroSlider = e.target.closest("nyro-slider:not([disable-swipe])");
+        if (!nyroSlider) {
+            return;
+        }
+
+        e.preventDefault();
+
+        pointerPos.nyroSlider = nyroSlider;
+        pointerPos.first.x = e.clientX;
+        pointerPos.first.y = e.clientY;
+
+        document.body.addEventListener("pointermove", pointerMove);
+        document.body.addEventListener("pointerup", pointerUp);
+        document.body.addEventListener("pointercancel", pointerCancel);
+    });
+};
+
+const addSwipeEvents = (nyroSlider) => {
+    registerSwipeEvents();
+};
+
+const removeSwipeEvents = (nyroSlider) => {};
+
 class NyroSlider extends HTMLElement {
     static get observedAttributes() {
-        return ["pos"];
+        return ["pos", "disable-swipe"];
     }
 
     attributeChangedCallback(name, prev, next) {
         if (name === "pos") {
             this._writePos();
+        } else if (name === "disable-swipe") {
+            this._handleSwipe();
         }
     }
 
@@ -67,6 +149,18 @@ class NyroSlider extends HTMLElement {
             this.setAttribute("pos", parseInt(pos));
         } else {
             this.removeAttribute("pos");
+        }
+    }
+
+    get disableSwipe() {
+        return this.hasAttribute("disable-swipe");
+    }
+
+    set disableSwipe(disableSwipe) {
+        if (disableSwipe) {
+            this.setAttribute("disable-swipe", "");
+        } else {
+            this.removeAttribute("disable-swipe");
         }
     }
 
@@ -87,13 +181,25 @@ class NyroSlider extends HTMLElement {
 
         this._countElements();
         this.calcLayout();
-        this._writePos();
 
         this.bindNav();
     }
 
     connectedCallback() {
+        this._handleSwipe();
         this._inited = true;
+    }
+
+    disconnectedCallback() {
+        removeSwipeEvents(this);
+    }
+
+    _handleSwipe() {
+        if (this.disableSwipe) {
+            removeSwipeEvents(this);
+        } else {
+            addSwipeEvents(this);
+        }
     }
 
     bindNav() {
@@ -114,9 +220,6 @@ class NyroSlider extends HTMLElement {
     }
 
     _writePos() {
-        if (!this._inited) {
-            return;
-        }
         if (this.pos < 0) {
             this.pos = 0;
             return;
@@ -127,13 +230,16 @@ class NyroSlider extends HTMLElement {
         }
 
         this._main.style.setProperty("--pos", this.pos);
-        this.dispatchEvent(
-            new CustomEvent("changedPosition", {
-                bubbles: true,
-                cancelable: true,
-                detail: this.pos,
-            })
-        );
+
+        if (this._inited) {
+            this.dispatchEvent(
+                new CustomEvent("changedPosition", {
+                    bubbles: true,
+                    cancelable: true,
+                    detail: this.pos,
+                })
+            );
+        }
     }
 
     _countElements() {
