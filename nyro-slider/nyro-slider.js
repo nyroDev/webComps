@@ -56,6 +56,13 @@ const pointerPos = {
         last: {},
     },
     downCallback = (e) => {
+        if (pointerPos.nyroSlider) {
+            // We already passed through a pointerup, without ending it.
+            // It's probably a pinch-zoom gesture, abort here to let it going though naturally
+            unbind();
+            return;
+        }
+
         e.preventDefault();
 
         pointerPos.nyroSlider = e.target.closest("nyro-slider:not([disable-swipe])");
@@ -178,7 +185,7 @@ class NyroSlider extends HTMLElement {
         if (this.disableSwipe) {
             this.removeEventListener("pointerdown", downCallback);
         } else {
-            this.addEventListener("pointerdown", downCallback)
+            this.addEventListener("pointerdown", downCallback);
         }
     }
 
@@ -217,7 +224,7 @@ class NyroSlider extends HTMLElement {
                     bubbles: true,
                     cancelable: true,
                     detail: this.pos,
-                }),
+                })
             );
         }
     }
