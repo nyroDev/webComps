@@ -50,82 +50,66 @@ main div {
 <span class="calc"></span>
 `;
 
-let registerSwipeEventsAdded = false;
-
-const registerSwipeEvents = () => {
-    if (registerSwipeEventsAdded) {
-        return;
-    }
-    registerSwipeEventsAdded = true;
-
-    const pointerPos = {
-            nyroSlider: false,
-            first: {},
-            last: {},
-        },
-        unbind = () => {
-            document.body.removeEventListener("pointermove", pointerMove);
-            document.body.removeEventListener("pointerup", pointerUp);
-            document.body.removeEventListener("pointercancel", pointerCancel);
-            pointerPos.nyroSlider = false;
-        },
-        checkSwipe = () => {
-            const diffX = pointerPos.first.x - pointerPos.last.x;
-
-            if (Math.abs(diffX) > 30) {
-                if (diffX < 0) {
-                    pointerPos.nyroSlider.prev();
-                } else {
-                    pointerPos.nyroSlider.next();
-                }
-                return true;
-            }
-        },
-        pointerMove = (e) => {
-            pointerPos.last.x = e.clientX;
-            pointerPos.last.y = e.clientY;
-
-            e.preventDefault();
-
-            if (checkSwipe()) {
-                unbind();
-            }
-        },
-        pointerUp = (e) => {
-            pointerPos.last.x = e.clientX;
-            pointerPos.last.y = e.clientY;
-
-            e.preventDefault();
-
-            unbind();
-        },
-        pointerCancel = (e) => {
-            unbind();
-        };
-
-    document.body.addEventListener("pointerdown", (e) => {
-        const nyroSlider = e.target.closest("nyro-slider:not([disable-swipe])");
-        if (!nyroSlider) {
-            return;
-        }
-
+const pointerPos = {
+        nyroSlider: false,
+        first: {},
+        last: {},
+    },
+    downCallback = (e) => {
         e.preventDefault();
 
-        pointerPos.nyroSlider = nyroSlider;
+        pointerPos.nyroSlider = e.target.closest("nyro-slider:not([disable-swipe])");
         pointerPos.first.x = e.clientX;
         pointerPos.first.y = e.clientY;
 
         document.body.addEventListener("pointermove", pointerMove);
         document.body.addEventListener("pointerup", pointerUp);
         document.body.addEventListener("pointercancel", pointerCancel);
-    });
-};
+    },
+    checkSwipe = () => {
+        const diffX = pointerPos.first.x - pointerPos.last.x;
 
-const addSwipeEvents = (nyroSlider) => {
-    registerSwipeEvents();
-};
+        if (Math.abs(diffX) > 30) {
+            if (diffX < 0) {
+                pointerPos.nyroSlider.prev();
+            } else {
+                pointerPos.nyroSlider.next();
+            }
+            return true;
+        }
+    },
+    pointerMove = (e) => {
+        if (!pointerPos.nyroSlider) {
+            return;
+        }
+        pointerPos.last.x = e.clientX;
+        pointerPos.last.y = e.clientY;
 
-const removeSwipeEvents = (nyroSlider) => {};
+        e.preventDefault();
+
+        if (checkSwipe()) {
+            unbind();
+        }
+    },
+    pointerUp = (e) => {
+        if (!pointerPos.nyroSlider) {
+            return;
+        }
+        pointerPos.last.x = e.clientX;
+        pointerPos.last.y = e.clientY;
+
+        checkSwipe();
+        unbind();
+    },
+    pointerCancel = () => {
+        unbind();
+    },
+    unbind = () => {
+        document.body.removeEventListener("pointermove", pointerMove);
+        document.body.removeEventListener("pointerup", pointerUp);
+        document.body.removeEventListener("pointercancel", pointerCancel);
+        pointerPos.nyroSlider = false;
+    };
 
 class NyroSlider extends HTMLElement {
     static get observedAttributes() {
@@ -190,15 +174,11 @@ class NyroSlider extends HTMLElement {
         this._inited = true;
     }
 
-    disconnectedCallback() {
-        removeSwipeEvents(this);
-    }
-
     _handleSwipe() {
         if (this.disableSwipe) {
-            removeSwipeEvents(this);
+            this.removeEventListener("pointerdown", downCallback);
         } else {
-            addSwipeEvents(this);
+            this.addEventListener("pointerdown", downCallback)
         }
     }
 
@@ -237,7 +217,7 @@ class NyroSlider extends HTMLElement {
                     bubbles: true,
                     cancelable: true,
                     detail: this.pos,
-                })
+                }),
             );
         }
     }
