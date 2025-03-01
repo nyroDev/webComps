@@ -2,8 +2,8 @@ const template = document.createElement("template");
 template.innerHTML = `
 <style>
 :host {
-    --nyro-slider-animation-time: 300ms;
-    --nyro-slider-slide-width: 100%;
+    --nyro-swiper-animation-time: 300ms;
+    --nyro-swiper-slide-width: 100%;
 
     display: inline-block;
 }
@@ -14,8 +14,8 @@ main {
     --pos: 0;
     --nb: 1;
 
-    --delta: calc(100% - var(--nyro-slider-slide-width));
-    --maxTranslate: calc((var(--nb) - 1) * -1 * var(--nyro-slider-slide-width) + var(--delta));
+    --delta: calc(100% - var(--nyro-swiper-slide-width));
+    --maxTranslate: calc((var(--nb) - 1) * -1 * var(--nyro-swiper-slide-width) + var(--delta));
 
     width: 100%;
     height: 100%;
@@ -26,18 +26,18 @@ main div {
     display: flex;
     transform: translateX(
         max(
-            var(--pos) * -1 * var(--nyro-slider-slide-width),
+            var(--pos) * -1 * var(--nyro-swiper-slide-width),
             var(--maxTranslate)
         )
     );
-    transition: transform var(--nyro-slider-animation-time);
+    transition: transform var(--nyro-swiper-animation-time);
 }
 ::slotted(*) {
     flex-shrink: 0;
 }
 .calc {
     display: block;
-    width: var(--nyro-slider-slide-width);
+    width: var(--nyro-swiper-slide-width);
     height: 0;
 }
 </style>
@@ -51,12 +51,12 @@ main div {
 `;
 
 const pointerPos = {
-        nyroSlider: false,
+        nyroSwiper: false,
         first: {},
         last: {},
     },
     downCallback = (e) => {
-        if (pointerPos.nyroSlider) {
+        if (pointerPos.nyroSwiper) {
             // We already passed through a pointerup, without ending it.
             // It's probably a pinch-zoom gesture, abort here to let it going though naturally
             unbind();
@@ -65,7 +65,7 @@ const pointerPos = {
 
         e.preventDefault();
 
-        pointerPos.nyroSlider = e.target.closest("nyro-slider:not([disable-swipe])");
+        pointerPos.nyroSwiper = e.target.closest("nyro-swiper:not([disable-swipe])");
         pointerPos.first.x = e.clientX;
         pointerPos.first.y = e.clientY;
 
@@ -78,15 +78,15 @@ const pointerPos = {
 
         if (Math.abs(diffX) > 30) {
             if (diffX < 0) {
-                pointerPos.nyroSlider.prev();
+                pointerPos.nyroSwiper.prev();
             } else {
-                pointerPos.nyroSlider.next();
+                pointerPos.nyroSwiper.next();
             }
             return true;
         }
     },
     pointerMove = (e) => {
-        if (!pointerPos.nyroSlider) {
+        if (!pointerPos.nyroSwiper) {
             return;
         }
         pointerPos.last.x = e.clientX;
@@ -99,7 +99,7 @@ const pointerPos = {
         }
     },
     pointerUp = (e) => {
-        if (!pointerPos.nyroSlider) {
+        if (!pointerPos.nyroSwiper) {
             return;
         }
         pointerPos.last.x = e.clientX;
@@ -115,10 +115,10 @@ const pointerPos = {
         document.body.removeEventListener("pointermove", pointerMove);
         document.body.removeEventListener("pointerup", pointerUp);
         document.body.removeEventListener("pointercancel", pointerCancel);
-        pointerPos.nyroSlider = false;
+        pointerPos.nyroSwiper = false;
     };
 
-class NyroSlider extends HTMLElement {
+class NyroSwiper extends HTMLElement {
     static get observedAttributes() {
         return ["pos", "disable-swipe"];
     }
@@ -220,7 +220,7 @@ class NyroSlider extends HTMLElement {
 
         if (this._inited) {
             this.dispatchEvent(
-                new CustomEvent("changedPosition", {
+                new CustomEvent("nyroSwiperChangedPosition", {
                     bubbles: true,
                     cancelable: true,
                     detail: this.pos,
@@ -237,9 +237,9 @@ class NyroSlider extends HTMLElement {
     }
 
     calcLayout() {
-        this._sliderWidth = this.clientWidth;
+        this._swiperWidth = this.clientWidth;
         this._slideWidth = this._calcSpan.clientWidth;
-        this._nbSlidesShown = Math.floor(this._sliderWidth / this._slideWidth);
+        this._nbSlidesShown = Math.floor(this._swiperWidth / this._slideWidth);
 
         if (this._nbElements) {
             this._maxPos = Math.ceil(this._nbElements / this._nbSlidesShown) - 1;
@@ -266,6 +266,6 @@ class NyroSlider extends HTMLElement {
     }
 }
 
-window.customElements.define("nyro-slider", NyroSlider);
+window.customElements.define("nyro-swiper", NyroSwiper);
 
-export default NyroSlider;
+export default NyroSwiper;

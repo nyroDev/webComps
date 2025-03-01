@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+  <title>Test swiper</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="module" src="nyro-swiper.js"></script>
+
+  <style>
+    nyro-swiper {
+      position: relative;
+      width: 600px;
+      --nyro-swiper-slide-width: 300px;
+      border: 1px solid red;
+      padding: 10px;
+    }
+    nyro-swiper .nav {
+      position: absolute;
+      top: 50%;
+      background: #000;
+      color: #fff;
+      width: 40px;
+      text-align: center;
+      text-decoration: none;
+      font-size: 50px;
+      transform: translate(0, -50%);
+    }
+    nyro-swiper .nav:hover {
+      background: blue;
+    }
+    nyro-swiper .navPrev {
+      left: 0;
+    }
+    nyro-swiper .navNext {
+      right: 0;
+    }
+    #swiper2 {
+      width: 450px;
+      --nyro-swiper-slide-width: 100%;
+    }
+    .card {
+      width: var(--nyro-swiper-slide-width);
+      height: 300px;
+      font-size: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card1 {
+      background: red;
+    }
+    .card2 {
+      background: blue;
+    }
+    .card3 {
+      background: yellow;
+    }
+    .card4 {
+      background: green;
+    }
+    .card5 {
+      background: pink;
+    }
+    .card6 {
+      background: gray;
+    }
+  </style>
+</head>
+<body>
+  <nyro-swiper id="swiper1" pos="2">
+    <div class="card card1"><a href="#" onclick="alert('clicked')">1</a></div>
+    <div class="card card2">2</div>
+    <div class="card card3">3</div>
+    <div class="card card4">4</div>
+    <div class="card card5">5</div>
+    <div class="card card6">6</div>
+
+    <a href="#" class="nav navPrev" slot="nav">&lt;</a>
+    <a href="#" class="nav navNext" slot="nav">&gt;</a>
+  </nyro-swiper>
+  <br />
+  <nyro-swiper id="swiper2" pos="2">
+    <div class="card card1">1</div>
+    <div class="card card2">2</div>
+    <div class="card card3">3</div>
+    <div class="card card4">4</div>
+    <div class="card card5">5</div>
+    <div class="card card6">6</div>
+
+    <a href="#" class="nav navNext" slot="nav">&gt;</a>
+  </nyro-swiper>
+
+  <br />
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-swiper" target="_blank">Source on Github</a>
+
+  <script>
+    (function () {
+      // Syncrhonize 2 swiper
+      const swiper1 = document.getElementById('swiper1');
+      const swiper2 = document.getElementById('swiper2');
+
+      swiper1.addEventListener('nyroSwiperChangedPosition', (e) => {
+        swiper2.pos = swiper1.pos;
+      });
+    })();
+  </script>
+</body>
+</html>
