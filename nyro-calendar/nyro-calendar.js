@@ -19,6 +19,8 @@ template.innerHTML = `
     --nyro-calendar-header-padding: 0.2em 0.3em;
     --nyro-calendar-header-border-bottom: none;
 
+    --nyro-calendar-header-div-color: var(--nyro-calendar-link-color);
+    --nyro-calendar-header-div-color-hover: var(--nyro-calendar-link-color-hover);
     --nyro-calendar-header-div-font: "";
     --nyro-calendar-header-div-text-transform: capitalize;
 
@@ -31,8 +33,9 @@ template.innerHTML = `
     --nyro-calendar-dayNames-text-color: var(--nyro-calendar-text-color);
     --nyro-calendar-dayNames-border: none;
 
+    --nyro-calendar-cell-size: 2em;
     --nyro-calendar-cell-padding: 0.06em;
-    --nyro-calendar-cell-height: 2em;
+    --nyro-calendar-cell-gap: 0.5em;
 
     position: relative;
     display: inline-block;
@@ -68,6 +71,12 @@ header div {
     font: var(--nyro-calendar-header-div-font);
     text-transform: var(--nyro-calendar-header-div-text-transform);
 }
+header div a {
+    color: var(--nyro-calendar-header-div-color);
+}
+header div a:hover {
+    color: var(--nyro-calendar-header-div-color-hover);
+}
 header nav {
     font: var(--nyro-calendar-header-nav-font);
 }
@@ -87,6 +96,7 @@ header.cannotNextMonth .nextMonth,
 main section {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    gap: var(--nyro-calendar-cell-gap);
 }
 main section > span {
     display: flex;
@@ -94,7 +104,7 @@ main section > span {
     justify-content: center;
     aspect-ratio: 1;
     font: var(--nyro-calendar-number-font);
-    height: var(--nyro-calendar-cell-height);
+    height: var(--nyro-calendar-cell-size);
     padding: var(--nyro-calendar-cell-padding);
 }
 #dayNames {
@@ -105,6 +115,21 @@ main section > span {
 }
 #dayNames > span {
     aspect-ratio: auto;
+}
+.day {
+    position: relative;
+    z-index: 0;
+}
+.day:hover {
+    z-index: 1;
+}
+.day > span {
+    z-index: 1;
+    pointer-events: none;
+}
+.day slot {
+    display: inline;
+    z-index: 0;
 }
 .otherDay {
     color: var(--nyro-calendar-otherDay-text-color);
@@ -153,6 +178,55 @@ main section > span {
 }
 .chooseYear .yearPage {
     font: var(--nyro-calendar-header-nav-font);
+}
+.day_0 {
+    --day: 0;
+    --dayCol: 6;
+}
+.day_1 {
+    --day: 1;
+    --dayCol: 0;
+}
+.day_2 {
+    --day: 2;
+    --dayCol: 1;
+}
+.day_3 {
+    --day: 3;
+    --dayCol: 2;
+}
+.day_4 {
+    --day: 4;
+    --dayCol: 3;
+}
+.day_5 {
+    --day: 5;
+    --dayCol: 4;
+}
+.day_6 {
+    --day: 6;
+    --dayCol: 5;
+}
+:host([first-day-of-week="0"]) .day_0 {
+    --dayCol: 0;
+}
+:host([first-day-of-week="0"]) .day_1 {
+    --dayCol: 1;
+}
+:host([first-day-of-week="0"]) .day_2 {
+    --dayCol: 2;
+}
+:host([first-day-of-week="0"]) .day_3 {
+    --dayCol: 3;
+}
+:host([first-day-of-week="0"]) .day_4 {
+    --dayCol: 4;
+}
+:host([first-day-of-week="0"]) .day_5 {
+    --dayCol: 5;
+}
+:host([first-day-of-week="0"]) .day_6 {
+    --dayCol: 6;
 }
 </style>
 <header>
@@ -226,6 +300,8 @@ const intlToday = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).fo
 
 const today = new Date();
 standardizeDate(today);
+
+const todayFormatted = formatDate(today);
 
 let tplChooseMonth;
 const createChooseMonth = () => {
@@ -421,9 +497,6 @@ class NyroCalendar extends HTMLElement {
         this._dayNames = this.shadowRoot.querySelector("#dayNames");
         this._days = this.shadowRoot.querySelector("#days");
 
-        this._trDays = this.shadowRoot.querySelector("thead tr");
-        this._tbody = this.shadowRoot.querySelector("tbody");
-
         this._curMonth.addEventListener("click", (e) => {
             e.preventDefault();
             if (!this.readonly) {
@@ -522,51 +595,23 @@ class NyroCalendar extends HTMLElement {
             tmpDate.setDate(tmpDate.getDate() - nbDaysBefore - 1);
             for (let i = 0; i < nbDaysBefore; i++) {
                 tmpDate.setDate(tmpDate.getDate() + 1);
-                if (this.otherDays) {
-                    html.push(
-                        '<span class="otherDay day_' +
-                            tmpDate.getDay() +
-                            (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
-                            '">' +
-                            tmpDate.getDate() +
-                            "</span>"
-                    );
-                } else {
-                    html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
-                }
+                html.push(this._htmlDay(this.otherDays ? "otherDay" : "empty", tmpDate));
             }
             tmpDate.setDate(tmpDate.getDate() + 1);
         }
 
         for (let i = 1; i <= nbDays; i++) {
             tmpDate.setDate(i);
-            html.push(
-                '<span class="day_' +
-                    tmpDate.getDay() +
-                    (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
-                    (formatDate(today) === formatDate(tmpDate) ? " today" : "") +
-                    '">' +
-                    i +
-                    "</span>"
-            );
+            html.push(this._htmlDay("regularDay", tmpDate));
         }
 
         this._header.classList.toggle("cannotNextMonth", !this.respectMinMaxDate(tmpDate));
 
-        const missingDaysOnLastWeek = 7 - (html.length % 7);
-        for (let i = 0; i < missingDaysOnLastWeek; i++) {
-            tmpDate.setDate(tmpDate.getDate() + 1);
-            if (this.otherDays) {
-                html.push(
-                    '<span class="otherDay day_' +
-                        tmpDate.getDay() +
-                        (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
-                        '">' +
-                        tmpDate.getDate() +
-                        "</span>"
-                );
-            } else {
-                html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
+        if ((tmpDate.getDay() + 1) % 7 != this.firstDayOfWeek) {
+            const missingDaysOnLastWeek = 7 - (html.length % 7);
+            for (let i = 0; i < missingDaysOnLastWeek; i++) {
+                tmpDate.setDate(tmpDate.getDate() + 1);
+                html.push(this._htmlDay(this.otherDays ? "otherDay" : "empty", tmpDate));
             }
         }
 
@@ -574,24 +619,34 @@ class NyroCalendar extends HTMLElement {
             // We need 6 weeks to have a fixed height
             for (let i = 0; i < 7; i++) {
                 tmpDate.setDate(tmpDate.getDate() + 1);
-                if (this.otherDays) {
-                    html.push(
-                        '<span class="otherDay day_' +
-                            tmpDate.getDay() +
-                            (this.respectMinMaxDate(tmpDate) ? "" : " day_out_of_range") +
-                            '">' +
-                            tmpDate.getDate() +
-                            "</span>"
-                    );
-                } else {
-                    html.push('<span class="empty day_' + tmpDate.getDay() + '">-</span>');
-                }
+                html.push(this._htmlDay(this.otherDays ? "otherDay" : "empty", tmpDate));
             }
         }
 
         this._curMonth.innerHTML = monthFormatter.format(this._month);
         this._curYear.innerHTML = this._month.getFullYear();
         this._days.innerHTML = html.join("");
+    }
+
+    _htmlDay(type, date) {
+        const formattedDate = formatDate(date);
+
+        return (
+            '<span class="day ' +
+            type +
+            " day_" +
+            date.getDay() +
+            (this.respectMinMaxDate(date) ? "" : " day_out_of_range") +
+            (todayFormatted === formattedDate ? " today" : "") +
+            '">' +
+            "<span>" +
+            date.getDate() +
+            "</span>" +
+            '<slot name="day_' +
+            formattedDate +
+            '"></slot>' +
+            "</span>"
+        );
     }
 
     respectMinMaxDate(date) {

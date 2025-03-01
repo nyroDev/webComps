@@ -13,22 +13,67 @@
 
     <style>
       #cal1 {
-        border: none;
-        --nyro-calendar-border-radius: 1em;
+          border: none;
+          --nyro-calendar-border-radius: 1em;
 
-        font-family: 'Roboto', sans-serif;
-        font-size: 2rem;
-        --nyro-calendar-text-color: #fefefe;
-        --nyro-calendar-link-color: #ef0000;
-        --nyro-calendar-link-color-hover: #f00;
-        --nyro-calendar-background-color: #26292b;
+          font-family: "Roboto", sans-serif;
+          font-size: 2rem;
+          --nyro-calendar-text-color: #fefefe;
+          --nyro-calendar-link-color: #ef0000;
+          --nyro-calendar-link-color-hover: #f00;
+          --nyro-calendar-background-color: #26292b;
 
-        --nyro-calendar-otherDay-text-color: #f5f9ff99;
-        --nyro-calendar-empty-text-color: #f5f9ff99;
+          --nyro-calendar-otherDay-text-color: #f5f9ff99;
+          --nyro-calendar-empty-text-color: #f5f9ff99;
       }
       #cal3 {
-        font-size: 12px;
+          font-size: 12px;
       }
+      nyro-calendar time {
+          --bg-color: #ccc;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: var(--bg-color);
+          border-radius: 1em;
+          text-indent: -999em;
+      }
+      nyro-calendar time div {
+          /*
+          * We have to recalculate from scratch because of messing
+          * - 12px: font-size set on calendar
+          * - 0.85: 0.85em from --nyro-calendar-number-font
+          * - 2: cell size is set with 2em
+          * - 2 * 0.06: cell have a padding on each side of 0.06em
+          */
+          --cell-full-size: calc(12px * 0.85 * (2 + 2 * 0.06));
+          --call-gap: calc(12px * 0.5);
+
+          position: absolute;
+          top: calc(100% + var(--call-gap));
+          left: calc(-1 * var(--dayCol) * (var(--cell-full-size) + var(--call-gap)));
+          width: calc(7 * var(--cell-full-size) + 6 * var(--call-gap));
+          box-sizing: border-box;
+          padding: 0.4em 0.8em;
+          border-radius: 1em;
+          font-size: 1.4em;
+          background: var(--bg-color);
+          opacity: 0;
+          visibility: hidden;
+          z-index: 4;
+      }
+      nyro-calendar time:hover {
+          text-indent: 0;
+          --bg-color: #aaa;
+      }
+      nyro-calendar time:hover div {
+          color: #000;
+          opacity: 1;
+          visibility: visible;
+      }
+
     </style>
   </head>
   <body>
@@ -53,7 +98,27 @@
       month="2021-02"
       fixed-weeks
       other-days
-    ></nyro-calendar>
+    >
+  
+    <time datetime="2021-02-15" slot="day_2021-02-15">
+      <div>
+        <a href="#">Information about this date</a>
+      </div>
+    </time>
+
+    <time datetime="2021-02-18" slot="day_2021-02-18">
+      <div>
+        Information about this date
+      </div>
+    </time>
+
+    <time datetime="2021-03-03" slot="day_2021-03-03">
+      <div>
+        Information about this date
+      </div>
+    </time>
+  
+  </nyro-calendar>
 
     <br />
     <a href="https://github.com/nyroDev/webComps/tree/master/nyro-calendar" target="_blank">Source on Github</a>
