@@ -16,6 +16,14 @@ template.innerHTML = `
 
     --nyro-calendar-number-font: 0.85em var(--nyro-calendar-font-family);
 
+    --nyro-calendar-dayFilled-font: var(--nyro-calendar-number-font);
+    --nyro-calendar-dayFilled-text-color: var(--nyro-calendar-background-color);
+    --nyro-calendar-dayFilled-bakground: var(--nyro-calendar-link-color);
+
+    --nyro-calendar-dayFilledHighlight-font: var(--nyro-calendar-dayFilled-font);
+    --nyro-calendar-dayFilledHighlight-text-color: var(--nyro-calendar-dayFilled-text-color);
+    --nyro-calendar-dayFilledHighlight-bakground: #d40000;
+
     --nyro-calendar-header-padding: 0.2em 0.3em;
     --nyro-calendar-header-border-bottom: none;
 
@@ -119,6 +127,7 @@ main section > span {
 .day {
     position: relative;
     z-index: 0;
+    border-radius: 50%;
 }
 .day:hover {
     z-index: 1;
@@ -142,6 +151,26 @@ main section > span {
 }
 .empty {
     opacity: 0;
+    pointer-events: none;
+}
+:host([mode="pick"]) .day:hover,
+.dayFilled {
+    --nyro-calendar-filled-font: var(--nyro-calendar-dayFilled-font);
+    --nyro-calendar-filled-text-color: var(--nyro-calendar-dayFilled-text-color);
+    --nyro-calendar-filled-bakground: var(--nyro-calendar-dayFilled-bakground);
+
+    font: var(--nyro-calendar-filled-font);
+    color: var(--nyro-calendar-filled-text-color);
+    background: var(--nyro-calendar-filled-bakground);
+}
+.dayFilledHighlight,
+.dayFilledHighlight:hover {
+    --nyro-calendar-filled-font: var(--nyro-calendar-dayFilledHighlight-font);
+    --nyro-calendar-filled-text-color: var(--nyro-calendar-dayFilledHighlight-text-color);
+    --nyro-calendar-filled-bakground: var(--nyro-calendar-dayFilledHighlight-bakground);
+}
+:host([mode="pick"]) .day {
+    cursor: pointer;
 }
 .chooseMonth,
 .chooseYear {
@@ -390,6 +419,18 @@ class NyroCalendar extends HTMLElement {
         }
     }
 
+    get mode() {
+        return this.getAttribute("mode");
+    }
+
+    set mode(mode) {
+        if (mode !== undefined) {
+            this.setAttribute("mode", mode);
+        } else {
+            this.removeAttribute("mode");
+        }
+    }
+
     get month() {
         return formatMonth(this._month);
     }
@@ -481,6 +522,44 @@ class NyroCalendar extends HTMLElement {
         }
     }
 
+    get value() {
+        if (this.mode !== "pick") {
+            return;
+        }
+        const time = this.querySelector("time");
+        if (!time) {
+            return false;
+        }
+
+        return new Date(time.dateTime);
+    }
+
+    set value(value) {
+        if (this.mode !== "pick") {
+            return;
+        }
+
+        if (!(value instanceof Date)) {
+            console.warn("Please set a Date object.");
+            return;
+        }
+
+        let time = this.querySelector("time");
+        if (value) {
+            if (!time) {
+                time = document.createElement("time");
+                this.appendChild(time);
+            }
+
+            const formattedDate = formatDate(value);
+
+            time.slot = "day_" + formattedDate;
+            time.dateTime = formattedDate;
+        } else if (time) {
+            time.remove();
+        }
+    }
+
     connectedCallback() {
         this.attachShadow({
             mode: "open",
@@ -522,6 +601,65 @@ class NyroCalendar extends HTMLElement {
             if (!this.readonly) {
                 this.nextMonth();
             }
+        });
+
+        this.shadowRoot.addEventListener("slotchange", (e) => {
+            if (!e.target.parentElement.classList.contains("day")) {
+                return;
+            }
+
+            if (e.target.assignedElements().length) {
+                e.target.parentElement.classList.add("dayFilled");
+                e.target.parentElement.classList.toggle(
+                    "dayFilledHighlight",
+                    e.target.assignedElements().some((node) => node.classList.contains("highlight"))
+                );
+            } else {
+                e.target.parentElement.classList.remove("dayFilled");
+                e.target.parentElement.classList.remove("dayFilledHighlight");
+            }
+        });
+
+        this._days.addEventListener("click", (e) => {
+            if (this.mode !== "pick") {
+                return;
+            }
+            let day = e.target.closest(".day");
+            if (!day) {
+                // In case of click into a slotted element, we have to search on composedPath
+                day = e.composedPath().find((pathElement) => {
+                    return pathElement.classList && pathElement.classList.contains("day");
+                });
+
+                if (!day) {
+                    return;
+                }
+            }
+
+            if (day.classList.contains("empty")) {
+                return;
+            }
+
+            const slot = day.querySelector("slot");
+            let time = this.querySelector("time");
+            if (!time) {
+                time = document.createElement("time");
+                this.appendChild(time);
+            }
+
+            if (time.slot === slot.name) {
+                // Same value, do nothing
+                return;
+            }
+
+            time.slot = slot.name;
+            time.dateTime = slot.name.substring(4);
+            this.dispatchEvent(
+                new CustomEvent("change", {
+                    bubbles: true,
+                    cancelable: true,
+                })
+            );
         });
 
         this._readMinDateAttribute();

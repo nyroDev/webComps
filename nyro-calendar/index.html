@@ -30,15 +30,12 @@
           font-size: 12px;
       }
       nyro-calendar time {
-          --bg-color: #ccc;
+          /* Make the time use the full size of the day cell */
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
-          background: var(--bg-color);
-          border-radius: 1em;
-          text-indent: -999em;
       }
       nyro-calendar time div {
           /*
@@ -51,6 +48,7 @@
           --cell-full-size: calc(12px * 0.85 * (2 + 2 * 0.06));
           --call-gap: calc(12px * 0.5);
 
+          /* Position the div tooltip under the cell, taking the full width of the calendar */
           position: absolute;
           top: calc(100% + var(--call-gap));
           left: calc(-1 * var(--dayCol) * (var(--cell-full-size) + var(--call-gap)));
@@ -58,18 +56,15 @@
           box-sizing: border-box;
           padding: 0.4em 0.8em;
           border-radius: 1em;
-          font-size: 1.4em;
-          background: var(--bg-color);
+          font: var(--nyro-calendar-filled-font);
+          font-size: 12px;
+          color: var(--nyro-calendar-filled-text-color);
+          background: var(--nyro-calendar-filled-bakground);
           opacity: 0;
           visibility: hidden;
           z-index: 4;
       }
-      nyro-calendar time:hover {
-          text-indent: 0;
-          --bg-color: #aaa;
-      }
       nyro-calendar time:hover div {
-          color: #000;
           opacity: 1;
           visibility: visible;
       }
@@ -79,6 +74,7 @@
   <body>
     <nyro-calendar
       id="cal1"
+      mode="pick"
       month="2021-02"
       fixed-weeks
       other-days
@@ -99,26 +95,33 @@
       fixed-weeks
       other-days
     >
-  
-    <time datetime="2021-02-15" slot="day_2021-02-15">
-      <div>
-        <a href="#">Information about this date</a>
-      </div>
-    </time>
+      <time datetime="2021-02-15" slot="day_2021-02-15">
+        <div>
+          <a href="#">Information about this date</a>
+        </div>
+      </time>
 
-    <time datetime="2021-02-18" slot="day_2021-02-18">
-      <div>
-        Information about this date
-      </div>
-    </time>
+      <time datetime="2021-02-18" slot="day_2021-02-18" class="highlight">
+        <div>
+          Information about this date
+        </div>
+      </time>
 
-    <time datetime="2021-03-03" slot="day_2021-03-03">
-      <div>
-        Information about this date
-      </div>
-    </time>
-  
-  </nyro-calendar>
+      <time datetime="2021-03-03" slot="day_2021-03-03">
+        <div>
+          Information about this date
+        </div>
+      </time>
+    </nyro-calendar>
+    <nyro-calendar
+      id="cal4"
+      mode="pick"
+      month="2021-02"
+      fixed-weeks
+      other-days
+    >
+      <time datetime="2021-02-08" slot="day_2021-02-08"></time>
+    </nyro-calendar>
 
     <br />
     <a href="https://github.com/nyroDev/webComps/tree/master/nyro-calendar" target="_blank">Source on Github</a>
@@ -131,6 +134,9 @@
 
         cal1.addEventListener('changedMonth', (e) => {
           cal2.month = cal1.month;
+        });
+        cal1.addEventListener('change', (e) => {
+          console.log(e.target.value);
         });
       })();
     </script>
