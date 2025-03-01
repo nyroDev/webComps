@@ -522,16 +522,37 @@ class NyroCalendar extends HTMLElement {
         }
     }
 
+    get multiple() {
+        return this.hasAttribute("multiple");
+    }
+
+    set multiple(multiple) {
+        if (multiple) {
+            this.setAttribute("multiple", "");
+        } else {
+            this.removeAttribute("multiple");
+        }
+    }
+
     get value() {
         if (this.mode !== "pick") {
             return;
         }
-        const time = this.querySelector("time");
-        if (!time) {
-            return false;
+        const values = Array.from(this.querySelectorAll("time")).map((time) => {
+            const date = new Date(time.dateTime);
+            standardizeDate(date);
+            return date;
+        });
+
+        if (!this.multiple) {
+            if (values.length === 0) {
+                return false;
+            }
+
+            return values[0];
         }
 
-        return new Date(time.dateTime);
+        return values;
     }
 
     set value(value) {
@@ -539,25 +560,47 @@ class NyroCalendar extends HTMLElement {
             return;
         }
 
-        if (!(value instanceof Date)) {
-            console.warn("Please set a Date object.");
+        if (!value) {
+            // Simply remove all existing values
+            this.querySelectorAll("time").forEach((time) => {
+                time.remove();
+            });
             return;
         }
 
-        let time = this.querySelector("time");
-        if (value) {
-            if (!time) {
-                time = document.createElement("time");
-                this.appendChild(time);
+        if (this.multiple) {
+            if (!Array.isArray(value)) {
+                console.warn("Please set an array of Date object.");
+                return;
             }
-
-            const formattedDate = formatDate(value);
-
-            time.slot = "day_" + formattedDate;
-            time.dateTime = formattedDate;
-        } else if (time) {
-            time.remove();
+        } else if (!(value instanceof Date)) {
+            console.warn("Please set a Date object.");
+            return;
+        } else {
+            value = [value];
         }
+
+        const matchedTimes = new Set();
+        value.forEach((val) => {
+            if (val) {
+                const formattedDate = formatDate(val);
+                let time = this.querySelector("time" + (this.multiple ? '[slot="day_' + formattedDate + '"]' : ""));
+                if (!time) {
+                    time = document.createElement("time");
+                    this.appendChild(time);
+                }
+
+                time.slot = "day_" + formattedDate;
+                time.dateTime = formattedDate;
+                matchedTimes.add(time);
+            }
+        });
+
+        this.querySelectorAll("time").forEach((time) => {
+            if (!matchedTimes.has(time)) {
+                time.remove();
+            }
+        });
     }
 
     connectedCallback() {
@@ -641,15 +684,20 @@ class NyroCalendar extends HTMLElement {
             }
 
             const slot = day.querySelector("slot");
-            let time = this.querySelector("time");
+            let time = this.querySelector("time" + (this.multiple ? '[slot="' + slot.name + '"]' : ""));
+
+            if (time && time.slot === slot.name) {
+                // Same value
+                if (this.multiple) {
+                    // In multiple, remove the value clicked
+                    time.remove();
+                }
+                return;
+            }
+
             if (!time) {
                 time = document.createElement("time");
                 this.appendChild(time);
-            }
-
-            if (time.slot === slot.name) {
-                // Same value, do nothing
-                return;
             }
 
             time.slot = slot.name;

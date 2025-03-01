@@ -122,6 +122,13 @@
     >
       <time datetime="2021-02-08" slot="day_2021-02-08"></time>
     </nyro-calendar>
+    <nyro-calendar
+      id="cal5"
+      mode="pick"
+      multiple
+      fixed-weeks
+      other-days
+    ></nyro-calendar>
 
     <br />
     <a href="https://github.com/nyroDev/webComps/tree/master/nyro-calendar" target="_blank">Source on Github</a>
@@ -138,6 +145,9 @@
         cal1.addEventListener('change', (e) => {
           console.log(e.target.value);
         });
+        document.getElementById('cal5').addEventListener('change', (e) => {
+          console.log(e.target.value);
+        })
       })();
     </script>
   </body>
