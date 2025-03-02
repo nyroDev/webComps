@@ -155,6 +155,10 @@ class NyroSwiper extends HTMLElement {
         }
     }
 
+    get elements() {
+        return this.querySelectorAll(":scope > *:not([slot])");
+    }
+
     constructor() {
         super();
         this.attachShadow({
@@ -166,7 +170,7 @@ class NyroSwiper extends HTMLElement {
         this._calcSpan = this.shadowRoot.querySelector(".calc");
 
         this._nbElements = 1;
-        this.shadowRoot.addEventListener("slotchange", (e) => {
+        this.shadowRoot.addEventListener("slotchange", () => {
             this._countElements();
         });
 
@@ -230,8 +234,7 @@ class NyroSwiper extends HTMLElement {
     }
 
     _countElements() {
-        this._nbElements = this.querySelectorAll(":scope > *:not([slot])").length;
-        this._main.style.setProperty("--nb", this._nbElements);
+        this._nbElements = this.elements.length;
 
         this.calcLayout();
     }
@@ -239,10 +242,12 @@ class NyroSwiper extends HTMLElement {
     calcLayout() {
         this._swiperWidth = this.clientWidth;
         this._slideWidth = this._calcSpan.clientWidth;
-        this._nbSlidesShown = Math.floor(this._swiperWidth / this._slideWidth);
+        this._nbSlidesShown = Math.round(Math.floor((100 * this._swiperWidth) / this._slideWidth) / 100);
 
         if (this._nbElements) {
             this._maxPos = Math.ceil(this._nbElements / this._nbSlidesShown) - 1;
+            this._main.style.setProperty("--nb", Math.max(this._nbElements, this._nbSlidesShown));
+            this.classList.toggle("nyroSwiperNoNav", this._maxPos < 1);
             if (this.pos > this._maxPos) {
                 this.pos = this._maxPos;
             }
@@ -263,6 +268,18 @@ class NyroSwiper extends HTMLElement {
             nextPos = 0;
         }
         this.pos = nextPos;
+    }
+
+    goTo(element) {
+        if (element.parentElement !== this) {
+            console.warn("Element for goTo should be a direct child");
+            return;
+        }
+
+        const newPos = Array.prototype.indexOf.call(this.elements, element);
+        if (newPos !== -1) {
+            this.pos = newPos;
+        }
     }
 }
 
