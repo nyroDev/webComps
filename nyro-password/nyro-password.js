@@ -244,7 +244,7 @@ class NyroPassword extends HTMLElement {
     }
 
     get form() {
-        return this.internals.form;
+        return this._internals.form;
     }
 
     get name() {
