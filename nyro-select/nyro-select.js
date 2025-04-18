@@ -1,3 +1,5 @@
+import { registerScrollFrom, unregisterScrollFrom } from "./scrollUtility.js";
+
 /////////////////////////////////////////////////////
 // START nyro-select-option
 /////////////////////////////////////////////////////
@@ -203,12 +205,17 @@ template.innerHTML = `
     --nyro-select-search-height: 100%;
     --nyro-select-search-font-size: 14px;
     --nyro-select-arrow-width: 2px;
+    --nyro-select-arrow-width-right: calc(var(--nyro-select-arrow-width) * 3);
     --nyro-select-arrow-color: currentColor;
+    --nyro-select-arrow-focused-opacity: 0;
     --nyro-select-color: currentColor;
     --nyro-select-placeholder-color: #a9a9a9;
 
-    --nyro-select-dropdown-border: 1px solid #767676;
+    --nyro-select-dropdown-border-width: 1px;
+    --nyro-select-dropdown-border-style: solid;
+    --nyro-select-dropdown-border-color: #767676;
     --nyro-select-dropdown-border-radius: 2px;
+    --nyro-select-dropdown-background-color: #fff;
     --nyro-select-dropdown-box-shadow: 0 3px 10px 0 rgba(0, 0, 0, 0.3);
     --nyro-select-dropdown-max-width: 50vw;
     --nyro-select-dropdown-max-height: min(27em, 40vh);
@@ -231,7 +238,7 @@ template.innerHTML = `
     content: '';
     position: absolute;
     top: 50%;
-    right: calc(var(--nyro-select-arrow-width) * 3);
+    right: var(--nyro-select-arrow-width-right);
     margin-top: calc(var(--nyro-select-arrow-width) * -1);
     display: inline-block;
     border: solid var(--nyro-select-arrow-color);
@@ -275,8 +282,11 @@ template.innerHTML = `
     box-sizing: border-box;
     overflow: auto;
 
-    border: var(--nyro-select-dropdown-border);
+    border-width: var(--nyro-select-dropdown-border-width);
+    border-style: var(--nyro-select-dropdown-border-style);
+    border-color: var(--nyro-select-dropdown-border-color);
     border-radius: var(--nyro-select-dropdown-border-radius);
+    background-color: var(--nyro-select-dropdown-background-color);
     box-shadow: var(--nyro-select-dropdown-box-shadow);
 
     max-width: var(--nyro-select-dropdown-max-width);
@@ -289,7 +299,7 @@ template.innerHTML = `
     transition: opacity 300ms, visibility 300ms;
 }
 :host([focused]):after {
-    display: none;
+    opacity: var(--nyro-select-arrow-focused-opacity);
 }
 :host([focused]) .dropdown {
     opacity: 1;
@@ -337,8 +347,12 @@ class NyroSelect extends HTMLElement {
     set focused(focused) {
         if (focused) {
             this.setAttribute("focused", "");
+            registerScrollFrom(this, () => {
+                this._positionDropdown();
+            });
         } else {
             this.removeAttribute("focused");
+            unregisterScrollFrom(this);
         }
     }
 
@@ -462,6 +476,10 @@ class NyroSelect extends HTMLElement {
             : "";
 
         this._parseSelected(true);
+    }
+
+    disconnectedCallback() {
+        unregisterScrollFrom(this);
     }
 
     get required() {

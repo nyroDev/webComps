@@ -12,6 +12,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
   <style>
+    body {
+      min-height: 200vh;
+    }
     label[for="mysel"],
     label[for="mysel2"],
     label[for="myselMul"],
@@ -67,6 +70,11 @@
     .customisedSel nyro-select-selected:hover {
       background-color: #34383b;
     }
+
+    #over {
+      height: 50px;
+      overflow: auto;
+    }
   </style>
 </head>
 <body>
@@ -82,17 +90,20 @@
       <option value="sel3" selected>Sel 3</option>
       <option value="sel4">Sel 4</option>
     </select>
+    <div id="over">
+      <label for="mysel">nyro-Select</label>
+      <nyro-select id="mysel" name="mysel" required>
+        <nyro-select-option>-- Please choose an option --</nyro-select-option>
+        <nyro-select-option value="dog">Dog</nyro-select-option>
+        <nyro-select-option value="cat">Cat</nyro-select-option>
+        <nyro-select-option value="hamster">Hamster</nyro-select-option>
+        <nyro-select-option value="parrot">Parrot</nyro-select-option>
+        <nyro-select-option value="spider">Spider</nyro-select-option>
+        <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
+      </nyro-select>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+    </div>
     <hr />
-    <label for="mysel">nyro-Select</label>
-    <nyro-select id="mysel" name="mysel" required>
-      <nyro-select-option>-- Please choose an option --</nyro-select-option>
-      <nyro-select-option value="dog">Dog</nyro-select-option>
-      <nyro-select-option value="cat">Cat</nyro-select-option>
-      <nyro-select-option value="hamster">Hamster</nyro-select-option>
-      <nyro-select-option value="parrot">Parrot</nyro-select-option>
-      <nyro-select-option value="spider">Spider</nyro-select-option>
-      <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
-    </nyro-select>
     <hr />
     <label for="myselMul">nyro-Select Multiple</label>
     <nyro-select id="myselMul" name="myselmul[]" required multiple>
