@@ -63,10 +63,13 @@
           opacity: 0;
           visibility: hidden;
           z-index: 4;
+          transition: opacity 300ms, visibility 300ms;
+          transition-delay: 0.5s;
       }
       nyro-calendar time:hover div {
           opacity: 1;
           visibility: visible;
+          transition-delay: 0s;
       }
 
     </style>

@@ -35,6 +35,7 @@ template.innerHTML = `
     --nyro-calendar-header-nav-color: var(--nyro-calendar-link-color);
     --nyro-calendar-header-nav-color-hover: var(--nyro-calendar-link-color-hover);
     --nyro-calendar-header-nav-font: "";
+    --nyro-calendar-header-nav-margin: 0;
 
     --nyro-calendar-dayNames-font: 80% var(--nyro-calendar-font-family);
     --nyro-calendar-dayNames-text-transform: uppercase;
@@ -89,6 +90,7 @@ header nav {
     font: var(--nyro-calendar-header-nav-font);
 }
 header nav a {
+    margin: var(--nyro-calendar-header-nav-margin);
     color: var(--nyro-calendar-header-nav-color);
 }
 header nav a:hover {
@@ -126,19 +128,13 @@ main section > span {
 }
 .day {
     position: relative;
-    z-index: 0;
     border-radius: 50%;
 }
-.day:hover {
-    z-index: 1;
-}
 .day > span {
-    z-index: 1;
     pointer-events: none;
 }
 .day slot {
     display: inline;
-    z-index: 0;
 }
 .otherDay {
     color: var(--nyro-calendar-otherDay-text-color);
@@ -665,6 +661,18 @@ class NyroCalendar extends HTMLElement {
 
         this._days.addEventListener("click", (e) => {
             if (this.mode !== "pick") {
+                if (e.target.closest(".nyroCloseTime")) {
+                    e.preventDefault();
+                    const time = e.target.closest("time");
+
+                    time.parentElement.removeChild(time);
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            this.appendChild(time);
+                        });
+                    });
+                }
                 return;
             }
             let day = e.target.closest(".day");
