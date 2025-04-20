@@ -75,15 +75,22 @@ class NyroSelectOption extends HTMLElement {
         return this.innerHTML;
     }
 
-    getSelected() {
+    get textLabel() {
+        return this.textContent;
+    }
+
+    getSelected(unique) {
         if (this._selected) {
+            this._selected.unique = unique;
             return this._selected;
         }
 
         this._selected = new NyroSelectSelected();
         this._selected.slot = "selectedValues";
         this._selected.value = this.value;
-        this._selected.label = this.label;
+        this._selected.innerHTML = this.label;
+
+        this._selected.unique = unique;
 
         return this._selected;
     }
@@ -103,8 +110,21 @@ const templateSelected = document.createElement("template");
 templateSelected.innerHTML = `
 <style>
 :host {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 2px;
+}
+:host([unique]) a {
+    display: none;
+}
+:host(:not([unique])) {
     --nyro-select-selected-padding: 2px 4px;
     --nyro-select-selected-border-color: #aaa;
+    --nyro-select-selected-color: #555;
+    --nyro-select-selected-background: #eee;
+    --nyro-select-selected-color-hover: var(--nyro-select-selected-color);
+    --nyro-select-selected-background-hover: #ddd;
+
     --nyro-select-selected-border-remove-color: #999;
     --nyro-select-selected-border-remove-color-hover: #333;
     --nyro-select-selected-border-remove-bg-color-hover: #f1f1f1;
@@ -112,21 +132,20 @@ templateSelected.innerHTML = `
     font-family: "Arial";
     font-size: 1em;
 
-    display: inline-flex;
-    align-items: center;
     border: 1px solid var(--nyro-select-selected-border-color);
     border-radius: 2px;
-    color: #555;
-    background-color: #eee;
-    margin-right: 2px;
+    color: var(--nyro-select-selected-color);
+    background: var(--nyro-select-selected-background);
 }
-:host(:hover) {
-    background-color: #ddd;
+:host(:not([unique]):hover) {
+    color: var(--nyro-select-selected-color-hover);
+    background: var(--nyro-select-selected-background-hover);
 }
-span {
+:host(:not([unique])) slot {
+    display: inline-block;
     padding: var(--nyro-select-selected-padding);
 }
-a {
+:host(:not([unique])) a {
     align-self: stretch;
     display: inline-flex;
     align-items: center;
@@ -136,14 +155,14 @@ a {
     padding: var(--nyro-select-selected-padding);
     border-right: 1px solid var(--nyro-select-selected-border-color);
 }
-a:hover {
+:host(:not([unique])) a:hover {
     background-color: var(--nyro-select-selected-border-remove-bg-color-hover);
     color: var(--nyro-select-selected-border-remove-color-hover);
     outline: none;
 }
 </style>
 <a href="#">X</a>
-<span></span>
+<slot></slot>
 `;
 
 class NyroSelectSelected extends HTMLElement {
@@ -169,6 +188,18 @@ class NyroSelectSelected extends HTMLElement {
             this.setAttribute("value", value);
         } else {
             this.removeAttribute("value");
+        }
+    }
+
+    get unique() {
+        return this.hasAttribute("unique");
+    }
+
+    set unique(unique) {
+        if (unique) {
+            this.setAttribute("unique", "");
+        } else {
+            this.removeAttribute("unique");
         }
     }
 
@@ -204,6 +235,7 @@ template.innerHTML = `
 :host {
     --nyro-select-search-height: 100%;
     --nyro-select-search-font-size: 14px;
+    --nyro-select-search-width: 13em;
     --nyro-select-arrow-width: 2px;
     --nyro-select-arrow-width-right: calc(var(--nyro-select-arrow-width) * 3);
     --nyro-select-arrow-color: currentColor;
@@ -259,6 +291,7 @@ template.innerHTML = `
     font-weight: inherit;
     font-style: inherit;
     font-size: var(--nyro-select-search-font-size);
+    width: var(--nyro-select-search-width);
     color: var(--nyro-select-color);
     border: none;
     background: transparent;
@@ -298,6 +331,22 @@ template.innerHTML = `
     visibility: hidden;
     transition: opacity 300ms, visibility 300ms;
 }
+
+:host(.hasValue[html]:not([multiple][focused])) #searchCont slot[name="selectedValues"] {
+    display: inline-block;
+    font-size: var(--nyro-select-search-font-size);
+    width: var(--nyro-select-search-width);
+    flex-grow: 1;
+    height: var(--nyro-select-search-height);
+}
+:host([html][focused]:not([multiple])) #searchCont slot[name="selectedValues"] {
+    display: none !important;
+}
+
+:host(.hasValue[html]:not([multiple], [focused])) #searchCont #search {
+    display: none;
+}
+
 :host([focused]):after {
     opacity: var(--nyro-select-arrow-focused-opacity);
 }
@@ -356,6 +405,54 @@ class NyroSelect extends HTMLElement {
         }
     }
 
+    get required() {
+        return this.hasAttribute("required");
+    }
+
+    set required(required) {
+        if (required) {
+            this.setAttribute("required", "");
+        } else {
+            this.removeAttribute("required");
+        }
+    }
+
+    get multiple() {
+        return this.hasAttribute("multiple");
+    }
+
+    set multiple(multiple) {
+        if (multiple) {
+            this.setAttribute("multiple", "");
+        } else {
+            this.removeAttribute("multiple");
+        }
+    }
+
+    get multipleNoCtrl() {
+        return this.hasAttribute("multiple-no-ctrl");
+    }
+
+    set multipleNoCtrl(multipleNoCtrl) {
+        if (multipleNoCtrl) {
+            this.setAttribute("multiple-no-ctrl", "");
+        } else {
+            this.removeAttribute("multiple-no-ctrl");
+        }
+    }
+
+    get html() {
+        return this.hasAttribute("html");
+    }
+
+    set html(html) {
+        if (html) {
+            this.setAttribute("html", "");
+        } else {
+            this.removeAttribute("html");
+        }
+    }
+
     attributeChangedCallback(name, prev, next) {
         if (name === "required") {
             this._setValidity();
@@ -404,6 +501,7 @@ class NyroSelect extends HTMLElement {
             // Reset validity to hide native error message
             this._internals.setValidity({});
             this.focused = true;
+            this._search.focus();
             setTimeout(() => {
                 // Re-evaluate validity value later
                 this._setValidity();
@@ -472,7 +570,7 @@ class NyroSelect extends HTMLElement {
         this._search.placeholder = this.hasAttribute("placeholder")
             ? this.getAttribute("placeholder")
             : this._defaultOption
-            ? this._defaultOption.label
+            ? this._defaultOption.textLabel
             : "";
 
         this._parseSelected(true);
@@ -480,42 +578,6 @@ class NyroSelect extends HTMLElement {
 
     disconnectedCallback() {
         unregisterScrollFrom(this);
-    }
-
-    get required() {
-        return this.hasAttribute("required");
-    }
-
-    set required(required) {
-        if (required) {
-            this.setAttribute("required", "");
-        } else {
-            this.removeAttribute("required");
-        }
-    }
-
-    get multiple() {
-        return this.hasAttribute("multiple");
-    }
-
-    set multiple(multiple) {
-        if (multiple) {
-            this.setAttribute("multiple", "");
-        } else {
-            this.removeAttribute("multiple");
-        }
-    }
-
-    get multipleNoCtrl() {
-        return this.hasAttribute("multiple-no-ctrl");
-    }
-
-    set multipleNoCtrl(multipleNoCtrl) {
-        if (multipleNoCtrl) {
-            this.setAttribute("multiple-no-ctrl", "");
-        } else {
-            this.removeAttribute("multiple-no-ctrl");
-        }
     }
 
     get value() {
@@ -583,13 +645,16 @@ class NyroSelect extends HTMLElement {
             console.error("Multiple selected option found in single mode, only first found will be used");
         }
 
-        if (this.multiple) {
+        if (this.multiple || this.html) {
             this.querySelectorAll('[slot="selectedValues"]').forEach((selectedValue) => {
                 selectedValue.remove();
             });
         }
 
         let value = undefined;
+        if (this.html) {
+            this._search.value = "";
+        }
         currentSelecteds.forEach((currentSelected) => {
             if (this.multiple) {
                 if (!value) {
@@ -600,10 +665,14 @@ class NyroSelect extends HTMLElement {
                 this.appendChild(currentSelected.getSelected());
             } else if (!value) {
                 value = currentSelected.value;
-                this._search.value = currentSelected.label;
+                this._search.value = currentSelected.textLabel;
+                if (this.html) {
+                    this.appendChild(currentSelected.getSelected(true));
+                }
             }
         });
 
+        this.classList.toggle("hasValue", !!value);
         this._value = value;
         this._internals.setFormValue(this._value);
         this._setValidity();
@@ -633,7 +702,7 @@ class NyroSelect extends HTMLElement {
     _filter() {
         let searchVal = normalizeText(this._search.value);
         this.querySelectorAll("nyro-select-option").forEach((option) => {
-            const matching = searchVal.length ? normalizeText(option.label).indexOf(searchVal) !== -1 : true;
+            const matching = searchVal.length ? normalizeText(option.textLabel).indexOf(searchVal) !== -1 : true;
             option.hidden = !matching;
             if (!matching && option.focused) {
                 option.focused = false;

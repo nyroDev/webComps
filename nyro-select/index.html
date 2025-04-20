@@ -59,8 +59,8 @@
       font-family: "Roboto", sans-serif;
       font-size: 16px;
       border-radius: 4px;
-      color: #f5f9ffe6;
-      background-color: #34383b;
+      --nyro-select-selected-color: #f5f9ffe6;
+      --nyro-select-selected-background: #34383b;
       margin-right: 4px;
 
     --nyro-select-selected-border-remove-color: #999;
@@ -71,9 +71,13 @@
       background-color: #34383b;
     }
 
-    #over {
-      height: 50px;
-      overflow: auto;
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: blue;
+      margin-right: 5px;
     }
   </style>
 </head>
@@ -90,28 +94,35 @@
       <option value="sel3" selected>Sel 3</option>
       <option value="sel4">Sel 4</option>
     </select>
-    <div id="over">
-      <label for="mysel">nyro-Select</label>
-      <nyro-select id="mysel" name="mysel" required>
-        <nyro-select-option>-- Please choose an option --</nyro-select-option>
-        <nyro-select-option value="dog">Dog</nyro-select-option>
-        <nyro-select-option value="cat">Cat</nyro-select-option>
-        <nyro-select-option value="hamster">Hamster</nyro-select-option>
-        <nyro-select-option value="parrot">Parrot</nyro-select-option>
-        <nyro-select-option value="spider">Spider</nyro-select-option>
-        <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
-      </nyro-select>
-      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-    </div>
     <hr />
+    <label for="mysel">nyro-Select</label>
+    <nyro-select id="mysel" name="mysel" required placeholder="-- Please choose an option --">
+      <nyro-select-option value="dog">Dog</nyro-select-option>
+      <nyro-select-option value="cat">Cat</nyro-select-option>
+      <nyro-select-option value="hamster">Hamster</nyro-select-option>
+      <nyro-select-option value="parrot">Parrot</nyro-select-option>
+      <nyro-select-option value="spider">Spider</nyro-select-option>
+      <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
+    </nyro-select>
+    <hr />
+    <label for="myselhtml">nyro-Select with HTML</label>
+    <nyro-select id="myselhtml" name="myselhtml" required html>
+      <nyro-select-option>-- Please choose an option --</nyro-select-option>
+      <nyro-select-option value="dog">Dog</nyro-select-option>
+      <nyro-select-option value="cat"><span class="dot"></span>Cat</nyro-select-option>
+      <nyro-select-option value="hamster">Hamster</nyro-select-option>
+      <nyro-select-option value="parrot"><span class="dot"></span>Parrot</nyro-select-option>
+      <nyro-select-option value="spider">Spider</nyro-select-option>
+      <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
+    </nyro-select>
     <hr />
     <label for="myselMul">nyro-Select Multiple</label>
     <nyro-select id="myselMul" name="myselmul[]" required multiple>
       <nyro-select-option>-- Please choose an option --</nyro-select-option>
       <nyro-select-option value="dog">Dog</nyro-select-option>
-      <nyro-select-option value="cat">Cat</nyro-select-option>
+      <nyro-select-option value="cat"><span class="dot"></span>Cat</nyro-select-option>
       <nyro-select-option value="hamster">Hamster</nyro-select-option>
-      <nyro-select-option value="parrot">Parrot</nyro-select-option>
+      <nyro-select-option value="parrot"><span class="dot"></span>Parrot</nyro-select-option>
       <nyro-select-option value="spider">Spider</nyro-select-option>
       <nyro-select-option value="goldfish">Goldfish</nyro-select-option>
     </nyro-select>
