@@ -75,6 +75,10 @@ class NyroSelectOption extends HTMLElement {
         return this.innerHTML;
     }
 
+    set label(label) {
+        this.innerHTML = label;
+    }
+
     get textLabel() {
         return this.textContent;
     }
@@ -364,7 +368,7 @@ template.innerHTML = `
 <div id="searchCont">
     <slot name="selectedValues"></slot>
     <input id="search" type="search" />
-</span>
+</div>
 <div class="dropdown">
     <slot></slot>
 </div>
@@ -609,6 +613,11 @@ class NyroSelect extends HTMLElement {
         this._parseSelected();
     }
 
+    search(search) {
+        this._search.value = search;
+        this._filter();
+    }
+
     _parseOrBlur() {
         if (this.multiple) {
             this._parseSelected();
@@ -700,7 +709,7 @@ class NyroSelect extends HTMLElement {
     }
 
     _filter() {
-        let searchVal = normalizeText(this._search.value);
+        const searchVal = normalizeText(this._search.value);
         this.querySelectorAll("nyro-select-option").forEach((option) => {
             const matching = searchVal.length ? normalizeText(option.textLabel).indexOf(searchVal) !== -1 : true;
             option.hidden = !matching;
@@ -849,7 +858,7 @@ class NyroSelect extends HTMLElement {
 
 window.customElements.define("nyro-select", NyroSelect);
 
-export { NyroSelectOption, NyroSelectSelected, NyroSelect };
+export { NyroSelectOption, NyroSelectSelected, NyroSelect, normalizeText };
 
 export default NyroSelect;
 
