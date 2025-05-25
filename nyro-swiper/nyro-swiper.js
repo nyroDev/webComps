@@ -242,12 +242,12 @@ class NyroSwiper extends HTMLElement {
     calcLayout() {
         this._swiperWidth = this.clientWidth;
         this._slideWidth = this._calcSpan.clientWidth;
-        this._nbSlidesShown = Math.round(Math.floor((100 * this._swiperWidth) / this._slideWidth) / 100);
+        this._nbSlidesShown = Math.round(Math.floor(100 * this._swiperWidth / this._slideWidth) / 100);
 
         if (this._nbElements) {
             this._maxPos = Math.ceil(this._nbElements / this._nbSlidesShown) - 1;
             this._main.style.setProperty("--nb", Math.max(this._nbElements, this._nbSlidesShown));
-            this.classList.toggle("nyroSwiperNoNav", this._maxPos < 1);
+            this.classList.toggle('nyroSwiperNoNav', this._maxPos < 1);
             if (this.pos > this._maxPos) {
                 this.pos = this._maxPos;
             }

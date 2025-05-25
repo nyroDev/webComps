@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Test tabs</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="module" src="nyro-tabs.js"></script>
+
+  <style>
+    nyro-tabs {
+      border: var(--nyro-tab-border);
+      margin-bottom: 10px;
+    }
+
+    nyro-tabs div {
+      padding: 10px;
+    }
+
+    #tabColor {
+      --nyro-tab-nav-background: #4a5054;
+      --nyro-tab-border-color: #fff;
+      color: #f5f9ffe6;
+      background-color: #26292b;
+    }
+
+    #tabColor nyro-tab {
+      background-color: #26292b;
+    }
+
+    #tabColor nyro-tab:hover,
+    #tabColor nyro-tab[selected] {
+      color: #f5f9ffe6;
+      background-color: #555e77;
+    }
+
+
+    fieldset {
+      border: none;
+      padding: 10px;
+      margin: 0:
+    }
+
+    legend {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <nyro-tabs class="noWrapNav">
+    <div title="Tab title 1 long">
+      <h2>Tab 1</h2>
+      <p>This is the content of Tab 1.</p>
+    </div>
+    <div title="Tab title 2 long">
+      <h2>Tab 2</h2>
+      <p>This is the content of Tab 2.</p>
+    </div>
+    <div title="Tab title 3 long">
+      <h2>Tab 3</h2>
+      <p>This is the content of Tab 3.</p>
+    </div>
+    <div title="Tab title 4 long">
+      <h2>Tab 4</h2>
+      <p>This is the content of Tab 4.</p>
+    </div>
+    <div title="Tab title 5 long">
+      <h2>Tab 5</h2>
+      <p>This is the content of Tab 5.</p>
+    </div>
+    <div title="Tab title 6 long">
+      <h2>Tab 6</h2>
+      <p>This is the content of Tab 6.</p>
+    </div>
+  </nyro-tabs>
+  <nyro-tabs id="tabColor" title-selector="h2">
+    <div>
+      <h2>Tab title 1 long</h2>
+      <p>This is the content of Tab 1.</p>
+    </div>
+    <div>
+      <h2>Tab title 2 long</h2>
+      <p>This is the content of Tab 2.</p>
+    </div>
+    <div>
+      <h2>Tab title 3 long</h2>
+      <p>This is the content of Tab 3.</p>
+    </div>
+    <div>
+      <h2>Tab title 4 long</h2>
+      <p>This is the content of Tab 4.</p>
+    </div>
+    <div>
+      <h2>Tab title 5 long</h2>
+      <p>This is the content of Tab 5.</p>
+    </div>
+    <div>
+      <h2>Tab title 6 long</h2>
+      <p>This is the content of Tab 6.</p>
+    </div>
+  </nyro-tabs>
+
+  <form>
+    <nyro-tabs selector="fieldset" title-selector="legend" tab="1">
+      <fieldset>
+        <legend>Section 1</legend>
+        <div>
+          <label for="input1">Input 1:</label>
+          <input type="text" required id="input1" name="input1">
+        </div>
+        <div>
+          <label for="input2">Input 2:</label>
+          <input type="text" required id="input2" name="input2">
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Section 2</legend>
+        <div>
+          <label for="input3">Input 3:</label>
+          <input type="text" required id="input3" name="input3">
+        </div>
+        <div>
+          <label for="input4">Input 4:</label>
+          <input type="text" required id="input4" name="input4">
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Section 3</legend>
+        <div>
+          <label for="input5">Input 5:</label>
+          <input type="text" required id="input5" name="input5">
+        </div>
+        <div>
+          <label for="input6">Input 6:</label>
+          <input type="text" required id="input6" name="input6">
+        </div>
+      </fieldset>
+      <div slot="footer">
+        <button type="submit">Submit</button>
+      </div>
+    </nyro-tabs>
+  </form>
+
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-tabs" target="_blank">Source on Github</a>
+</body>
+
+</html>
