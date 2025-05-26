@@ -63,6 +63,8 @@ template.innerHTML = `
 :host {
     --nyro-tab-border-color: #ccc;
     --nyro-tab-border: 1px solid var(--nyro-tab-border-color);
+
+    --nyro-tab-nav-border: var(--nyro-tab-border);
     --nyro-tab-nav-background: #fff;
 
     display: block;
@@ -84,7 +86,7 @@ nav:after {
     height: 1px;
     left: 0;
     right: 0;
-    border-bottom: var(--nyro-tab-border);
+    border-bottom: var(--nyro-tab-nav-border);
 }
 #hiddenContent {
     display: none;
@@ -149,7 +151,7 @@ class NyroTabs extends HTMLElement {
     }
 
     get elements() {
-        return this.querySelectorAll(this.selector);
+        return this.querySelectorAll(this.selector + ':not([slot="header"], [slot="footer"], [slot="nav"])');
     }
 
     constructor() {
