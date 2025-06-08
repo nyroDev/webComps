@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Test toaster</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="module" src="nyro-toaster.js"></script>
+
+  <style>
+    nyro-toaster-stack .close {
+      color: red;
+      text-decoration: none;
+    }
+    #stack2 {
+      top: 1rem;
+      bottom: auto;
+    }
+    #stack2 nyro-toaster {
+      background-color: #26292b;
+      color: #f5f9ffe6;
+      border-radius: 4px;
+      padding: 10px;
+      border: none;
+    }
+
+  </style>
+</head>
+
+<body>
+  <nyro-toaster-stack>
+    <nyro-toaster>
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+    <nyro-toaster>
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+    <nyro-toaster>
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+  </nyro-toaster-stack>
+
+  <nyro-toaster-stack id="stack2">
+    <nyro-toaster autoclose-timeout="10">
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+    <nyro-toaster no-autoclose>
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+    <nyro-toaster>
+      <a href="#" class="close">X</a>
+      Great to see you here!
+    </nyro-toaster>
+  </nyro-toaster-stack>
+
+  <a href="https://github.com/nyroDev/webComps/tree/master/nyro-toaster" target="_blank">Source on Github</a>
+</body>
+
+</html>
