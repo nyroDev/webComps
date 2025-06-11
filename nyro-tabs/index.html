@@ -34,11 +34,36 @@
       background-color: #555e77;
     }
 
+    #tabHtmlNav nav {
+      display: flex;
+    }
+    #tabHtmlNav nav nyro-tab {
+      position: relative;
+      font-size: 20px;
+      padding: 10px;
+      margin-right: 30px;
+      border: 1px solid #000;
+    }
+    #tabHtmlNav nav nyro-tab + nyro-tab::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      margin-right: 1px;
+      width: 30px;
+      height: 1px;
+      background-color: #000;
+    }
+
+    #tabHtmlNav:not([tab]) .nyro-tabs-prev,
+    #tabHtmlNav[is-last-tab] .nyro-tabs-next {
+      display: none;
+    }
 
     fieldset {
       border: none;
       padding: 10px;
-      margin: 0:
+      margin: 0;
     }
 
     legend {
@@ -137,6 +162,54 @@
         </div>
       </fieldset>
       <div slot="footer">
+        <button type="submit">Submit</button>
+      </div>
+    </nyro-tabs>
+  </form>
+
+  <form>
+    <nyro-tabs id="tabHtmlNav" selector="fieldset" html-nav listen-prev-next tab="1">
+      <nav slot="htmlNav">
+        <nyro-tab index="0"><em>Section 1</em></nyro-tab>
+        <nyro-tab index="1"><em>Section 2</em></nyro-tab>
+        <nyro-tab index="2"><em>Section 3</em></nyro-tab>
+      </nav>
+      <fieldset>
+        <legend>Section 1</legend>
+        <div>
+          <label for="input1">Input 1:</label>
+          <input type="text" required id="input1" name="input1">
+        </div>
+        <div>
+          <label for="input2">Input 2:</label>
+          <input type="text" required id="input2" name="input2">
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Section 2</legend>
+        <div>
+          <label for="input3">Input 3:</label>
+          <input type="text" required id="input3" name="input3">
+        </div>
+        <div>
+          <label for="input4">Input 4:</label>
+          <input type="text" required id="input4" name="input4">
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Section 3</legend>
+        <div>
+          <label for="input5">Input 5:</label>
+          <input type="text" required id="input5" name="input5">
+        </div>
+        <div>
+          <label for="input6">Input 6:</label>
+          <input type="text" required id="input6" name="input6">
+        </div>
+      </fieldset>
+      <div slot="footer">
+        <a href="#" class="nyro-tabs-prev">Previous</a>
+        <a href="#" class="nyro-tabs-next">Next</a>
         <button type="submit">Submit</button>
       </div>
     </nyro-tabs>
