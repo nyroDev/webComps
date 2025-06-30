@@ -779,7 +779,7 @@ class NyroCalendar extends HTMLElement {
 
         let nbDaysBefore = 0;
         if (this.firstDayOfWeek != firstDay.getDay()) {
-            nbDaysBefore = firstDay.getDay() - this.firstDayOfWeek;
+            nbDaysBefore = (7 + firstDay.getDay() - this.firstDayOfWeek) % 7;
         } else if (this.fixedWeeks && tmpDate.getMonth() === 1) {
             // The only case we're adding a complete line before current month is a February month that starts on first day of week.
             nbDaysBefore = 7;
