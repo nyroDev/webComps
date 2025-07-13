@@ -3,6 +3,7 @@
 You can find live demos here:
 - [password](https://nyrodev.github.io/webComps/nyro-password/): Input type password replacement to add show/hide functionnality
 - [select](https://nyrodev.github.io/webComps/nyro-select/): Select replacement to add CSS and autocomplete feature
+- [file](https://nyrodev.github.io/webComps/nyro-file/): input type file replacement to improve UI and functionnality
 - [calendar (WIP)](https://nyrodev.github.io/webComps/nyro-calendar/): Month calendar utility, to be used as is or in an input
 - [swiper](https://nyrodev.github.io/webComps/nyro-swiper/): Swiper of HTML elements
 - [tabs](https://nyrodev.github.io/webComps/nyro-tabs/): Tabs of HTML elements
