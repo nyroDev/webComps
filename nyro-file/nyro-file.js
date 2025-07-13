@@ -24,6 +24,7 @@ template.innerHTML = `
 }
 div {
     display: flex;
+    height: 100%;
 }
 input {
     display: none;
@@ -142,7 +143,7 @@ class NyroFile extends HTMLElement {
             if (e.relatedTarget && e.relatedTarget.matches('[type="submit"]')) {
                 return;
             }
-            this._input.focus();
+            this._input.showPicker();
         });
 
         if (this.hasAttribute("value")) {
