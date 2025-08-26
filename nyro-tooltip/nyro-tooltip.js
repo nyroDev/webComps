@@ -37,12 +37,13 @@ template.innerHTML = `
     --nyro-tooltip-border-size: 2px;
     --nyro-tooltip-border-radius: 4px;
     --nyro-tooltip-box-shadow: none;
+    --nyro-tooltip-move: 0px;
 
     --nyro-tooltip-arrow-color: var(--nyro-tooltip-border-color);
-    --nyro-tooltip-box-arrow-size: 12px;
-    --nyro-tooltip-box-arrow-move: 0;
+    --nyro-tooltip-arrow-size: 12px;
+    --nyro-tooltip-arrow-move: 0px;
 
-    --nyro-tooltip-box-transition-time: 0.3s;
+    --nyro-tooltip-transition-time: 0.3s;
 
     display: inline-block;
     position: relative;
@@ -63,7 +64,7 @@ template.innerHTML = `
 
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--nyro-tooltip-box-transition-time), visibility var(--nyro-tooltip-box-transition-time);
+    transition: opacity var(--nyro-tooltip-transition-time), visibility var(--nyro-tooltip-transition-time);
 }
 .tooltip:after {
     content: "";
@@ -72,7 +73,7 @@ template.innerHTML = `
     width: 0;
     border: solid transparent;
     border-color: rgba(0, 0, 0, 0);
-    border-width: var(--nyro-tooltip-box-arrow-size);
+    border-width: var(--nyro-tooltip-arrow-size);
     pointer-events: none;
 }
 
@@ -84,14 +85,14 @@ template.innerHTML = `
     :host(:hover) .tooltip {
         opacity: 1;
         visibility: visible;
-        transition: opacity var(--nyro-tooltip-box-transition-time), visibility var(--nyro-tooltip-box-transition-time);
+        transition: opacity var(--nyro-tooltip-transition-time), visibility var(--nyro-tooltip-transition-time);
     }
 }
 
 :host([valign="down"]) .tooltip,
 :host(:not([valign])) .tooltip {
     top: 100%;
-    margin-top: var(--nyro-tooltip-box-arrow-size);
+    margin-top: var(--nyro-tooltip-arrow-size);
 }
 :host([valign="down"]) .tooltip:after,
 :host(:not([valign])) .tooltip:after {
@@ -101,7 +102,7 @@ template.innerHTML = `
 
 :host([valign="up"]) .tooltip {
     bottom: 100%;
-    margin-bottom: var(--nyro-tooltip-box-arrow-size);
+    margin-bottom: var(--nyro-tooltip-arrow-size);
 }
 :host([valign="up"]) .tooltip:after {
     top: 100%;
@@ -121,20 +122,20 @@ template.innerHTML = `
 
 :host([halign="left"]) .tooltip,
 :host([halign-default="left"]:not([halign])) .tooltip {
-    left: 0;
+    left: var(--nyro-tooltip-move);
 }
 :host([halign="left"]) .tooltip:after,
 :host([halign-default="left"]:not([halign])) .tooltip:after {
-    left: calc(-1 * var(--nyro-tooltip-border-size) + var(--nyro-tooltip-box-arrow-move));
+    left: calc(-1 * var(--nyro-tooltip-border-size) + var(--nyro-tooltip-arrow-move));
 }
 
 :host([halign="right"]) .tooltip,
 :host([halign-default="right"]:not([halign])) .tooltip {
-    right: 0;
+    right: var(--nyro-tooltip-move);
 }
 :host([halign="right"]) .tooltip:after,
 :host([halign-default="right"]:not([halign])) .tooltip:after {
-    right: calc(-1 * var(--nyro-tooltip-border-size) + var(--nyro-tooltip-box-arrow-move));
+    right: calc(-1 * var(--nyro-tooltip-border-size) + var(--nyro-tooltip-arrow-move));
 }
 </style>
 <span class="trigger"><slot name="trigger"></slot></span>
