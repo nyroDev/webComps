@@ -1,4 +1,4 @@
-import { registerScrollFrom, unregisterScrollFrom } from "./scrollUtility.js";
+import { registerScrollFrom, unregisterScrollFrom } from "./../utils/scrollUtility.js";
 
 /////////////////////////////////////////////////////
 // START nyro-select-option

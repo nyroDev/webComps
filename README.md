@@ -8,6 +8,7 @@ You can find live demos here:
 - [swiper](https://nyrodev.github.io/webComps/nyro-swiper/): Swiper of HTML elements
 - [tabs](https://nyrodev.github.io/webComps/nyro-tabs/): Tabs of HTML elements
 - [toaster](https://nyrodev.github.io/webComps/nyro-toaster/): Toaster
+- [tooltip](https://nyrodev.github.io/webComps/nyro-tooltip/): Tooltip
 - [sw](https://nyrodev.github.io/webComps/nyro-sw/): Service worker installer utility
 - [upload](https://nyrodev.github.io/webComps/nyro-upload/): Uploading tool with multiple support and progress indicator
 - [video](https://nyrodev.github.io/webComps/nyro-video/): Video player to customize button colors, supporting ads
