@@ -62,11 +62,17 @@ a {
 a:hover {
     color: var(--nyro-calendar-link-color-hover);
 }
-:host([readonly]) header a {
+:host([disabled]) {
+    pointer-events: none;
+    opacity: 0.7;
+}
+:host([readonly]) header a,
+:host([disabled]) header a {
     color: var(--nyro-calendar-text-color);
     pointer-events: none;
 }
-:host([readonly]) header nav {
+:host([readonly]) header nav,
+:host([disabled]) header nav {
     display: none;
 }
 header {
