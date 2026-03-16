@@ -288,7 +288,29 @@ class NyroTabs extends HTMLElement {
                 tab.selected = true;
                 el.slot = "content";
             }
-            this.appendChild(tab);
+
+            this.insertBefore(tab, el);
+        });
+
+        this.dispatchEvent(
+            new CustomEvent("tabwritten", {
+                bubbles: true,
+                cancelable: true,
+            })
+        );
+    }
+
+    beforeprint() {
+        this.querySelectorAll(':scope > *:not([slot="header"], [slot="footer"], [slot="htmlNav"])').forEach(slotted => {
+            slotted.dataset.slotBeforePrint = slotted.slot;
+            slotted.slot = 'content';
+        });
+    }
+
+    afterprint() {
+        this.querySelectorAll(':scope > [data-slot-before-print]').forEach(slotted => {
+            slotted.slot = slotted.dataset.slotBeforePrint;
+            delete slotted.dataset.slotBeforePrint;
         });
     }
 
